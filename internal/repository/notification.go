@@ -39,6 +39,15 @@ func (r *NotificationRepository) ListByUser(ctx context.Context, userID uint64, 
 	return notifications, nil
 }
 
+func (r *NotificationRepository) CountUnread(ctx context.Context, userID uint64) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&model.Notification{}).
+		Where("user_id = ? AND is_read = ?", userID, false).
+		Count(&count).Error
+	return count, err
+}
+
 func (r *NotificationRepository) MarkRead(ctx context.Context, userID, notificationID uint64) error {
 	result := r.db.WithContext(ctx).
 		Model(&model.Notification{}).

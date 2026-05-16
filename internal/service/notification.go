@@ -69,6 +69,13 @@ func (s *NotificationService) List(ctx context.Context, userID uint64, input Lis
 	return buildNotificationListResult(notifications, limit), nil
 }
 
+func (s *NotificationService) UnreadCount(ctx context.Context, userID uint64) (int64, error) {
+	if userID == 0 {
+		return 0, ErrInvalidInput
+	}
+	return s.notifications.CountUnread(ctx, userID)
+}
+
 func (s *NotificationService) MarkRead(ctx context.Context, userID, notificationID uint64) error {
 	if userID == 0 || notificationID == 0 {
 		return ErrInvalidInput

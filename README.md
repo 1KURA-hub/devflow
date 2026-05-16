@@ -42,6 +42,7 @@ POST /api/posts/:id/comments
 GET /api/posts/:id/comments
 GET /api/me/favorites
 GET /api/notifications
+GET /api/notifications/unread-count
 POST /api/notifications/:id/read
 POST /api/notifications/read-all
 ```

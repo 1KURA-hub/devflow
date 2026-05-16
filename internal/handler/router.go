@@ -82,6 +82,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 			authenticated.POST("/posts/:id/comments", app.createComment)
 			authenticated.GET("/me/favorites", app.listMyFavorites)
 			authenticated.GET("/notifications", app.listNotifications)
+			authenticated.GET("/notifications/unread-count", app.getUnreadNotificationCount)
 			authenticated.POST("/notifications/read-all", app.markAllNotificationsRead)
 			authenticated.POST("/notifications/:id/read", app.markNotificationRead)
 		}

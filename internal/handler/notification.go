@@ -32,6 +32,21 @@ func (a *App) listNotifications(c *gin.Context) {
 	response.OK(c, result)
 }
 
+func (a *App) getUnreadNotificationCount(c *gin.Context) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	count, err := a.notificationService.UnreadCount(c.Request.Context(), userID)
+	if err != nil {
+		writeNotificationError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"unread_count": count})
+}
+
 func (a *App) markNotificationRead(c *gin.Context) {
 	userID, ok := middleware.CurrentUserID(c)
 	if !ok {
