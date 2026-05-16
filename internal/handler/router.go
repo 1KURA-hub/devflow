@@ -17,13 +17,14 @@ type Dependencies struct {
 }
 
 type App struct {
-	cfg                config.Config
-	db                 *gorm.DB
-	authService        *service.AuthService
-	postService        *service.PostService
-	followService      *service.FollowService
-	interactionService *service.InteractionService
-	commentService     *service.CommentService
+	cfg                 config.Config
+	db                  *gorm.DB
+	authService         *service.AuthService
+	postService         *service.PostService
+	followService       *service.FollowService
+	interactionService  *service.InteractionService
+	commentService      *service.CommentService
+	notificationService *service.NotificationService
 }
 
 func NewRouter(deps Dependencies) *gin.Engine {
@@ -36,14 +37,17 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	followRepo := repository.NewFollowRepository(deps.DB)
 	interactionRepo := repository.NewInteractionRepository(deps.DB)
 	commentRepo := repository.NewCommentRepository(deps.DB)
+	notificationRepo := repository.NewNotificationRepository(deps.DB)
+	notificationService := service.NewNotificationService(notificationRepo)
 	app := &App{
-		cfg:                deps.Config,
-		db:                 deps.DB,
-		authService:        service.NewAuthService(userRepo, deps.Config.JWTSecret),
-		postService:        service.NewPostService(postRepo, userRepo),
-		followService:      service.NewFollowService(followRepo, userRepo, postRepo),
-		interactionService: service.NewInteractionService(interactionRepo, postRepo, userRepo),
-		commentService:     service.NewCommentService(commentRepo, postRepo, userRepo),
+		cfg:                 deps.Config,
+		db:                  deps.DB,
+		authService:         service.NewAuthService(userRepo, deps.Config.JWTSecret),
+		postService:         service.NewPostService(postRepo, userRepo),
+		followService:       service.NewFollowService(followRepo, userRepo, postRepo, notificationService),
+		interactionService:  service.NewInteractionService(interactionRepo, postRepo, userRepo, notificationService),
+		commentService:      service.NewCommentService(commentRepo, postRepo, userRepo, notificationService),
+		notificationService: notificationService,
 	}
 
 	router := gin.New()
@@ -77,6 +81,9 @@ func NewRouter(deps Dependencies) *gin.Engine {
 			authenticated.DELETE("/posts/:id/favorite", app.unfavoritePost)
 			authenticated.POST("/posts/:id/comments", app.createComment)
 			authenticated.GET("/me/favorites", app.listMyFavorites)
+			authenticated.GET("/notifications", app.listNotifications)
+			authenticated.POST("/notifications/read-all", app.markAllNotificationsRead)
+			authenticated.POST("/notifications/:id/read", app.markNotificationRead)
 		}
 	}
 

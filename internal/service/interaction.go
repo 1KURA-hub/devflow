@@ -7,16 +7,18 @@ import (
 )
 
 type InteractionService struct {
-	interactions *repository.InteractionRepository
-	posts        *repository.PostRepository
-	users        *repository.UserRepository
+	interactions  *repository.InteractionRepository
+	posts         *repository.PostRepository
+	users         *repository.UserRepository
+	notifications *NotificationService
 }
 
-func NewInteractionService(interactions *repository.InteractionRepository, posts *repository.PostRepository, users *repository.UserRepository) *InteractionService {
+func NewInteractionService(interactions *repository.InteractionRepository, posts *repository.PostRepository, users *repository.UserRepository, notifications *NotificationService) *InteractionService {
 	return &InteractionService{
-		interactions: interactions,
-		posts:        posts,
-		users:        users,
+		interactions:  interactions,
+		posts:         posts,
+		users:         users,
+		notifications: notifications,
 	}
 }
 
@@ -27,10 +29,21 @@ func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) (b
 	if _, err := s.users.FindByID(ctx, userID); err != nil {
 		return false, err
 	}
-	if _, err := s.posts.FindByID(ctx, postID); err != nil {
+	post, err := s.posts.FindByID(ctx, postID)
+	if err != nil {
 		return false, err
 	}
-	return s.interactions.AddLike(ctx, userID, postID)
+	changed, err := s.interactions.AddLike(ctx, userID, postID)
+	if err != nil || !changed || s.notifications == nil {
+		return changed, err
+	}
+	return changed, s.notifications.Create(ctx, CreateNotificationInput{
+		UserID:  post.AuthorID,
+		ActorID: userID,
+		Type:    NotificationLike,
+		PostID:  &postID,
+		Content: "有人点赞了你的动态",
+	})
 }
 
 func (s *InteractionService) Unlike(ctx context.Context, userID, postID uint64) (bool, error) {
@@ -50,10 +63,21 @@ func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64
 	if _, err := s.users.FindByID(ctx, userID); err != nil {
 		return false, err
 	}
-	if _, err := s.posts.FindByID(ctx, postID); err != nil {
+	post, err := s.posts.FindByID(ctx, postID)
+	if err != nil {
 		return false, err
 	}
-	return s.interactions.AddFavorite(ctx, userID, postID)
+	changed, err := s.interactions.AddFavorite(ctx, userID, postID)
+	if err != nil || !changed || s.notifications == nil {
+		return changed, err
+	}
+	return changed, s.notifications.Create(ctx, CreateNotificationInput{
+		UserID:  post.AuthorID,
+		ActorID: userID,
+		Type:    NotificationFavorite,
+		PostID:  &postID,
+		Content: "有人收藏了你的动态",
+	})
 }
 
 func (s *InteractionService) Unfavorite(ctx context.Context, userID, postID uint64) (bool, error) {

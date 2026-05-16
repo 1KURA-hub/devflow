@@ -42,4 +42,7 @@ DELETE /api/posts/:id/favorite
 POST /api/posts/:id/comments
 GET /api/posts/:id/comments
 GET /api/me/favorites
+GET /api/notifications
+POST /api/notifications/:id/read
+POST /api/notifications/read-all
 ```

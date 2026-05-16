@@ -11,9 +11,10 @@ import (
 )
 
 type CommentService struct {
-	comments *repository.CommentRepository
-	posts    *repository.PostRepository
-	users    *repository.UserRepository
+	comments      *repository.CommentRepository
+	posts         *repository.PostRepository
+	users         *repository.UserRepository
+	notifications *NotificationService
 }
 
 type CreateCommentInput struct {
@@ -28,11 +29,12 @@ type CommentListResult struct {
 	HasMore    bool            `json:"has_more"`
 }
 
-func NewCommentService(comments *repository.CommentRepository, posts *repository.PostRepository, users *repository.UserRepository) *CommentService {
+func NewCommentService(comments *repository.CommentRepository, posts *repository.PostRepository, users *repository.UserRepository, notifications *NotificationService) *CommentService {
 	return &CommentService{
-		comments: comments,
-		posts:    posts,
-		users:    users,
+		comments:      comments,
+		posts:         posts,
+		users:         users,
+		notifications: notifications,
 	}
 }
 
@@ -47,7 +49,8 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	if _, err := s.users.FindByID(ctx, input.UserID); err != nil {
 		return nil, err
 	}
-	if _, err := s.posts.FindByID(ctx, input.PostID); err != nil {
+	post, err := s.posts.FindByID(ctx, input.PostID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -59,6 +62,18 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	}
 	if err := s.comments.Create(ctx, comment); err != nil {
 		return nil, err
+	}
+	if s.notifications != nil {
+		if err := s.notifications.Create(ctx, CreateNotificationInput{
+			UserID:    post.AuthorID,
+			ActorID:   input.UserID,
+			Type:      NotificationComment,
+			PostID:    &input.PostID,
+			CommentID: &comment.ID,
+			Content:   "有人评论了你的动态",
+		}); err != nil {
+			return nil, err
+		}
 	}
 	return comment, nil
 }

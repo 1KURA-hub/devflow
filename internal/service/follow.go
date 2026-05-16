@@ -11,9 +11,10 @@ import (
 var ErrCannotFollowSelf = errors.New("cannot follow self")
 
 type FollowService struct {
-	follows *repository.FollowRepository
-	users   *repository.UserRepository
-	posts   *repository.PostRepository
+	follows       *repository.FollowRepository
+	users         *repository.UserRepository
+	posts         *repository.PostRepository
+	notifications *NotificationService
 }
 
 type UserListInput struct {
@@ -25,11 +26,12 @@ type UserListResult struct {
 	Items []model.User `json:"items"`
 }
 
-func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository) *FollowService {
+func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository, notifications *NotificationService) *FollowService {
 	return &FollowService{
-		follows: follows,
-		users:   users,
-		posts:   posts,
+		follows:       follows,
+		users:         users,
+		posts:         posts,
+		notifications: notifications,
 	}
 }
 
@@ -50,10 +52,21 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 	if exists {
 		return nil
 	}
-	return s.follows.Create(ctx, &model.Follow{
+	if err := s.follows.Create(ctx, &model.Follow{
 		FollowerID: followerID,
 		FolloweeID: followeeID,
-	})
+	}); err != nil {
+		return err
+	}
+	if s.notifications != nil {
+		return s.notifications.Create(ctx, CreateNotificationInput{
+			UserID:  followeeID,
+			ActorID: followerID,
+			Type:    NotificationFollow,
+			Content: "有人关注了你",
+		})
+	}
+	return nil
 }
 
 func (s *FollowService) Unfollow(ctx context.Context, followerID, followeeID uint64) error {
