@@ -26,4 +26,8 @@ GET /api/healthz
 POST /api/auth/register
 POST /api/auth/login
 GET /api/me
+POST /api/posts
+GET /api/posts/:id
+GET /api/users/:id/posts
+GET /api/feed/latest
 ```

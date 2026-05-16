@@ -20,6 +20,7 @@ type App struct {
 	cfg         config.Config
 	db          *gorm.DB
 	authService *service.AuthService
+	postService *service.PostService
 }
 
 func NewRouter(deps Dependencies) *gin.Engine {
@@ -28,10 +29,12 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	}
 
 	userRepo := repository.NewUserRepository(deps.DB)
+	postRepo := repository.NewPostRepository(deps.DB)
 	app := &App{
 		cfg:         deps.Config,
 		db:          deps.DB,
 		authService: service.NewAuthService(userRepo, deps.Config.JWTSecret),
+		postService: service.NewPostService(postRepo, userRepo),
 	}
 
 	router := gin.New()
@@ -44,11 +47,15 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		api.GET("/healthz", app.healthz)
 		api.POST("/auth/register", app.register)
 		api.POST("/auth/login", app.login)
+		api.GET("/posts/:id", app.getPost)
+		api.GET("/users/:id/posts", app.listUserPosts)
+		api.GET("/feed/latest", app.listLatestPosts)
 
 		authenticated := api.Group("")
 		authenticated.Use(middleware.Auth(deps.Config.JWTSecret))
 		{
 			authenticated.GET("/me", app.me)
+			authenticated.POST("/posts", app.createPost)
 		}
 	}
 
