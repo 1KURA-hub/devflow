@@ -35,4 +35,9 @@ GET /api/users/:id/following
 GET /api/users/:id/followers
 GET /api/feed/latest
 GET /api/feed/following
+POST /api/posts/:id/like
+DELETE /api/posts/:id/like
+POST /api/posts/:id/favorite
+DELETE /api/posts/:id/favorite
+GET /api/me/favorites
 ```

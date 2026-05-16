@@ -52,6 +52,25 @@ func (r *PostRepository) ListLatest(ctx context.Context, cursor *time.Time, limi
 	return posts, nil
 }
 
+func (r *PostRepository) ListFavoritedByUser(ctx context.Context, userID uint64, cursor *time.Time, limit int) ([]model.Post, error) {
+	query := r.db.WithContext(ctx).
+		Model(&model.Post{}).
+		Joins("JOIN favorites ON favorites.post_id = posts.id").
+		Where("favorites.user_id = ? AND posts.status = ?", userID, 1).
+		Order("posts.created_at DESC").
+		Order("posts.id DESC").
+		Limit(limit)
+	if cursor != nil {
+		query = query.Where("posts.created_at < ?", *cursor)
+	}
+
+	var posts []model.Post
+	if err := query.Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return posts, nil
+}
+
 func (r *PostRepository) ListByAuthor(ctx context.Context, authorID uint64, cursor *time.Time, limit int) ([]model.Post, error) {
 	query := r.db.WithContext(ctx).
 		Where("author_id = ? AND status = ?", authorID, 1).

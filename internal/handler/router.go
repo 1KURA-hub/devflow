@@ -17,11 +17,12 @@ type Dependencies struct {
 }
 
 type App struct {
-	cfg           config.Config
-	db            *gorm.DB
-	authService   *service.AuthService
-	postService   *service.PostService
-	followService *service.FollowService
+	cfg                config.Config
+	db                 *gorm.DB
+	authService        *service.AuthService
+	postService        *service.PostService
+	followService      *service.FollowService
+	interactionService *service.InteractionService
 }
 
 func NewRouter(deps Dependencies) *gin.Engine {
@@ -32,12 +33,14 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	userRepo := repository.NewUserRepository(deps.DB)
 	postRepo := repository.NewPostRepository(deps.DB)
 	followRepo := repository.NewFollowRepository(deps.DB)
+	interactionRepo := repository.NewInteractionRepository(deps.DB)
 	app := &App{
-		cfg:           deps.Config,
-		db:            deps.DB,
-		authService:   service.NewAuthService(userRepo, deps.Config.JWTSecret),
-		postService:   service.NewPostService(postRepo, userRepo),
-		followService: service.NewFollowService(followRepo, userRepo, postRepo),
+		cfg:                deps.Config,
+		db:                 deps.DB,
+		authService:        service.NewAuthService(userRepo, deps.Config.JWTSecret),
+		postService:        service.NewPostService(postRepo, userRepo),
+		followService:      service.NewFollowService(followRepo, userRepo, postRepo),
+		interactionService: service.NewInteractionService(interactionRepo, postRepo, userRepo),
 	}
 
 	router := gin.New()
@@ -64,6 +67,11 @@ func NewRouter(deps Dependencies) *gin.Engine {
 			authenticated.POST("/users/:id/follow", app.followUser)
 			authenticated.DELETE("/users/:id/follow", app.unfollowUser)
 			authenticated.GET("/feed/following", app.listFollowingFeed)
+			authenticated.POST("/posts/:id/like", app.likePost)
+			authenticated.DELETE("/posts/:id/like", app.unlikePost)
+			authenticated.POST("/posts/:id/favorite", app.favoritePost)
+			authenticated.DELETE("/posts/:id/favorite", app.unfavoritePost)
+			authenticated.GET("/me/favorites", app.listMyFavorites)
 		}
 	}
 
