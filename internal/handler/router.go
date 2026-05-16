@@ -23,6 +23,7 @@ type App struct {
 	postService        *service.PostService
 	followService      *service.FollowService
 	interactionService *service.InteractionService
+	commentService     *service.CommentService
 }
 
 func NewRouter(deps Dependencies) *gin.Engine {
@@ -34,6 +35,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	postRepo := repository.NewPostRepository(deps.DB)
 	followRepo := repository.NewFollowRepository(deps.DB)
 	interactionRepo := repository.NewInteractionRepository(deps.DB)
+	commentRepo := repository.NewCommentRepository(deps.DB)
 	app := &App{
 		cfg:                deps.Config,
 		db:                 deps.DB,
@@ -41,6 +43,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		postService:        service.NewPostService(postRepo, userRepo),
 		followService:      service.NewFollowService(followRepo, userRepo, postRepo),
 		interactionService: service.NewInteractionService(interactionRepo, postRepo, userRepo),
+		commentService:     service.NewCommentService(commentRepo, postRepo, userRepo),
 	}
 
 	router := gin.New()
@@ -54,6 +57,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		api.POST("/auth/register", app.register)
 		api.POST("/auth/login", app.login)
 		api.GET("/posts/:id", app.getPost)
+		api.GET("/posts/:id/comments", app.listComments)
 		api.GET("/users/:id/posts", app.listUserPosts)
 		api.GET("/users/:id/following", app.listFollowingUsers)
 		api.GET("/users/:id/followers", app.listFollowerUsers)
@@ -71,6 +75,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 			authenticated.DELETE("/posts/:id/like", app.unlikePost)
 			authenticated.POST("/posts/:id/favorite", app.favoritePost)
 			authenticated.DELETE("/posts/:id/favorite", app.unfavoritePost)
+			authenticated.POST("/posts/:id/comments", app.createComment)
 			authenticated.GET("/me/favorites", app.listMyFavorites)
 		}
 	}

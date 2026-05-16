@@ -39,5 +39,7 @@ POST /api/posts/:id/like
 DELETE /api/posts/:id/like
 POST /api/posts/:id/favorite
 DELETE /api/posts/:id/favorite
+POST /api/posts/:id/comments
+GET /api/posts/:id/comments
 GET /api/me/favorites
 ```
