@@ -119,7 +119,22 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 	if userID == 0 {
 		return nil, ErrInvalidInput
 	}
+	if _, err := s.users.FindByID(ctx, userID); err != nil {
+		return nil, err
+	}
 	limit := normalizeLimit(input.Limit)
+	followingCount, err := s.follows.CountFollowing(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if followingCount == 0 {
+		posts, err := s.posts.ListLatest(ctx, input.Cursor, limit+1)
+		if err != nil {
+			return nil, err
+		}
+		return buildPostListResult(posts, limit), nil
+	}
+
 	posts, err := s.posts.ListFollowing(ctx, userID, input.Cursor, limit+1)
 	if err != nil {
 		return nil, err
