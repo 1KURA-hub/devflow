@@ -68,3 +68,24 @@ func (r *PostRepository) ListByAuthor(ctx context.Context, authorID uint64, curs
 	}
 	return posts, nil
 }
+
+func (r *PostRepository) ListFollowing(ctx context.Context, userID uint64, cursor *time.Time, limit int) ([]model.Post, error) {
+	following := r.db.Model(&model.Follow{}).
+		Select("followee_id").
+		Where("follower_id = ?", userID)
+
+	query := r.db.WithContext(ctx).
+		Where("author_id IN (?) AND status = ?", following, 1).
+		Order("created_at DESC").
+		Order("id DESC").
+		Limit(limit)
+	if cursor != nil {
+		query = query.Where("created_at < ?", *cursor)
+	}
+
+	var posts []model.Post
+	if err := query.Find(&posts).Error; err != nil {
+		return nil, err
+	}
+	return posts, nil
+}

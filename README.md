@@ -29,5 +29,10 @@ GET /api/me
 POST /api/posts
 GET /api/posts/:id
 GET /api/users/:id/posts
+POST /api/users/:id/follow
+DELETE /api/users/:id/follow
+GET /api/users/:id/following
+GET /api/users/:id/followers
 GET /api/feed/latest
+GET /api/feed/following
 ```

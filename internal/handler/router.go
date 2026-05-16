@@ -17,10 +17,11 @@ type Dependencies struct {
 }
 
 type App struct {
-	cfg         config.Config
-	db          *gorm.DB
-	authService *service.AuthService
-	postService *service.PostService
+	cfg           config.Config
+	db            *gorm.DB
+	authService   *service.AuthService
+	postService   *service.PostService
+	followService *service.FollowService
 }
 
 func NewRouter(deps Dependencies) *gin.Engine {
@@ -30,11 +31,13 @@ func NewRouter(deps Dependencies) *gin.Engine {
 
 	userRepo := repository.NewUserRepository(deps.DB)
 	postRepo := repository.NewPostRepository(deps.DB)
+	followRepo := repository.NewFollowRepository(deps.DB)
 	app := &App{
-		cfg:         deps.Config,
-		db:          deps.DB,
-		authService: service.NewAuthService(userRepo, deps.Config.JWTSecret),
-		postService: service.NewPostService(postRepo, userRepo),
+		cfg:           deps.Config,
+		db:            deps.DB,
+		authService:   service.NewAuthService(userRepo, deps.Config.JWTSecret),
+		postService:   service.NewPostService(postRepo, userRepo),
+		followService: service.NewFollowService(followRepo, userRepo, postRepo),
 	}
 
 	router := gin.New()
@@ -49,6 +52,8 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		api.POST("/auth/login", app.login)
 		api.GET("/posts/:id", app.getPost)
 		api.GET("/users/:id/posts", app.listUserPosts)
+		api.GET("/users/:id/following", app.listFollowingUsers)
+		api.GET("/users/:id/followers", app.listFollowerUsers)
 		api.GET("/feed/latest", app.listLatestPosts)
 
 		authenticated := api.Group("")
@@ -56,6 +61,9 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		{
 			authenticated.GET("/me", app.me)
 			authenticated.POST("/posts", app.createPost)
+			authenticated.POST("/users/:id/follow", app.followUser)
+			authenticated.DELETE("/users/:id/follow", app.unfollowUser)
+			authenticated.GET("/feed/following", app.listFollowingFeed)
 		}
 	}
 
