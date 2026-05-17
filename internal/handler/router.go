@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"devflow/internal/cache"
 	"devflow/internal/config"
 	"devflow/internal/middleware"
 	"devflow/internal/repository"
@@ -40,7 +41,8 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	interactionRepo := repository.NewInteractionRepository(deps.DB)
 	commentRepo := repository.NewCommentRepository(deps.DB)
 	notificationRepo := repository.NewNotificationRepository(deps.DB)
-	notificationService := service.NewNotificationService(notificationRepo)
+	notificationCounter := cache.NewNotificationCounter(deps.RedisClient)
+	notificationService := service.NewNotificationService(notificationRepo, notificationCounter)
 	app := &App{
 		cfg:                 deps.Config,
 		db:                  deps.DB,

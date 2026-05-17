@@ -8,6 +8,7 @@ Current stage:
 - auth register/login/me APIs
 - posts, latest feed, following feed with cold-start fallback
 - follow/unfollow, likes, favorites, comments, notifications
+- Redis-backed unread notification count cache
 
 ## Run
 

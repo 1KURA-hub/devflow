@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"devflow/internal/cache"
 	"devflow/internal/model"
 	"devflow/internal/repository"
 )
@@ -17,6 +18,7 @@ const (
 
 type NotificationService struct {
 	notifications *repository.NotificationRepository
+	counter       *cache.NotificationCounter
 }
 
 type CreateNotificationInput struct {
@@ -34,8 +36,11 @@ type NotificationListResult struct {
 	HasMore    bool                 `json:"has_more"`
 }
 
-func NewNotificationService(notifications *repository.NotificationRepository) *NotificationService {
-	return &NotificationService{notifications: notifications}
+func NewNotificationService(notifications *repository.NotificationRepository, counter *cache.NotificationCounter) *NotificationService {
+	return &NotificationService{
+		notifications: notifications,
+		counter:       counter,
+	}
 }
 
 func (s *NotificationService) Create(ctx context.Context, input CreateNotificationInput) error {
@@ -46,7 +51,7 @@ func (s *NotificationService) Create(ctx context.Context, input CreateNotificati
 	if content == "" {
 		content = defaultNotificationContent(input.Type)
 	}
-	return s.notifications.Create(ctx, &model.Notification{
+	if err := s.notifications.Create(ctx, &model.Notification{
 		UserID:    input.UserID,
 		ActorID:   input.ActorID,
 		Type:      input.Type,
@@ -54,7 +59,11 @@ func (s *NotificationService) Create(ctx context.Context, input CreateNotificati
 		CommentID: input.CommentID,
 		Content:   content,
 		IsRead:    false,
-	})
+	}); err != nil {
+		return err
+	}
+	_ = s.counter.IncrementIfExists(ctx, input.UserID)
+	return nil
 }
 
 func (s *NotificationService) List(ctx context.Context, userID uint64, input ListInput) (*NotificationListResult, error) {
@@ -73,21 +82,38 @@ func (s *NotificationService) UnreadCount(ctx context.Context, userID uint64) (i
 	if userID == 0 {
 		return 0, ErrInvalidInput
 	}
-	return s.notifications.CountUnread(ctx, userID)
+	if count, hit, err := s.counter.Get(ctx, userID); err == nil && hit {
+		return count, nil
+	}
+
+	count, err := s.notifications.CountUnread(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	_ = s.counter.Set(ctx, userID, count)
+	return count, nil
 }
 
 func (s *NotificationService) MarkRead(ctx context.Context, userID, notificationID uint64) error {
 	if userID == 0 || notificationID == 0 {
 		return ErrInvalidInput
 	}
-	return s.notifications.MarkRead(ctx, userID, notificationID)
+	if err := s.notifications.MarkRead(ctx, userID, notificationID); err != nil {
+		return err
+	}
+	_ = s.counter.Delete(ctx, userID)
+	return nil
 }
 
 func (s *NotificationService) MarkAllRead(ctx context.Context, userID uint64) error {
 	if userID == 0 {
 		return ErrInvalidInput
 	}
-	return s.notifications.MarkAllRead(ctx, userID)
+	if err := s.notifications.MarkAllRead(ctx, userID); err != nil {
+		return err
+	}
+	_ = s.counter.Delete(ctx, userID)
+	return nil
 }
 
 func buildNotificationListResult(notifications []model.Notification, limit int) *NotificationListResult {
