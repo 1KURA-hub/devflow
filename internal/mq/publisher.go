@@ -20,6 +20,13 @@ func (p *Publisher) PublishNotification(ctx context.Context, event NotificationE
 	return p.broker.PublishJSON(ctx, notificationRoutingKey(event.Type), event)
 }
 
+func (p *Publisher) PublishPostPublished(ctx context.Context, event PostPublishedEvent) error {
+	if p == nil {
+		return nil
+	}
+	return p.broker.PublishJSON(ctx, RoutingKeyPostPublished, event)
+}
+
 func notificationRoutingKey(notificationType string) string {
 	switch notificationType {
 	case "follow":

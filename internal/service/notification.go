@@ -55,7 +55,7 @@ func (s *NotificationService) Create(ctx context.Context, input CreateNotificati
 		content = defaultNotificationContent(input.Type)
 	}
 	if s.publisher != nil {
-		return s.publisher.PublishNotification(ctx, mq.NotificationEvent{
+		if err := s.publisher.PublishNotification(ctx, mq.NotificationEvent{
 			EventID:   mq.NewEventID(),
 			UserID:    input.UserID,
 			ActorID:   input.ActorID,
@@ -63,7 +63,9 @@ func (s *NotificationService) Create(ctx context.Context, input CreateNotificati
 			PostID:    input.PostID,
 			CommentID: input.CommentID,
 			Content:   content,
-		})
+		}); err == nil {
+			return nil
+		}
 	}
 	return s.CreateNow(ctx, CreateNotificationInput{
 		UserID:    input.UserID,

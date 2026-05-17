@@ -9,6 +9,7 @@ import (
 
 	"devflow/internal/cache"
 	"devflow/internal/model"
+	"devflow/internal/mq"
 	"devflow/internal/repository"
 )
 
@@ -24,6 +25,7 @@ type PostService struct {
 	hotPosts  *cache.HotPostStore
 	relations *cache.FollowRelationStore
 	inboxes   *cache.FeedInboxStore
+	publisher *mq.Publisher
 }
 
 type CreatePostInput struct {
@@ -44,7 +46,7 @@ type PostListResult struct {
 	HasMore    bool         `json:"has_more"`
 }
 
-func NewPostService(posts *repository.PostRepository, follows *repository.FollowRepository, users *repository.UserRepository, hotPosts *cache.HotPostStore, relations *cache.FollowRelationStore, inboxes *cache.FeedInboxStore) *PostService {
+func NewPostService(posts *repository.PostRepository, follows *repository.FollowRepository, users *repository.UserRepository, hotPosts *cache.HotPostStore, relations *cache.FollowRelationStore, inboxes *cache.FeedInboxStore, publisher *mq.Publisher) *PostService {
 	return &PostService{
 		posts:     posts,
 		follows:   follows,
@@ -52,6 +54,7 @@ func NewPostService(posts *repository.PostRepository, follows *repository.Follow
 		hotPosts:  hotPosts,
 		relations: relations,
 		inboxes:   inboxes,
+		publisher: publisher,
 	}
 }
 
@@ -79,13 +82,32 @@ func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model
 	if err := s.posts.Create(ctx, post); err != nil {
 		return nil, err
 	}
-	followerIDs, err := s.listFollowerIDs(ctx, input.AuthorID)
-	if err == nil {
-		for _, followerID := range followerIDs {
-			_ = s.inboxes.AddPost(ctx, followerID, post.ID, post.CreatedAt)
+	if s.publisher != nil {
+		if err := s.publisher.PublishPostPublished(ctx, mq.PostPublishedEvent{
+			EventID:   mq.NewEventID(),
+			PostID:    post.ID,
+			AuthorID:  post.AuthorID,
+			CreatedAt: post.CreatedAt,
+		}); err == nil {
+			return post, nil
 		}
 	}
+	_ = s.DistributeFeedNow(ctx, post.AuthorID, post.ID, post.CreatedAt)
 	return post, nil
+}
+
+func (s *PostService) DistributeFeedNow(ctx context.Context, authorID, postID uint64, createdAt time.Time) error {
+	if authorID == 0 || postID == 0 || createdAt.IsZero() {
+		return ErrInvalidInput
+	}
+	followerIDs, err := s.listFollowerIDs(ctx, authorID)
+	if err != nil {
+		return err
+	}
+	for _, followerID := range followerIDs {
+		_ = s.inboxes.AddPost(ctx, followerID, postID, createdAt)
+	}
+	return nil
 }
 
 func (s *PostService) Get(ctx context.Context, id uint64) (*model.Post, error) {

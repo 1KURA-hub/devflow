@@ -56,13 +56,16 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		cfg:                 deps.Config,
 		db:                  deps.DB,
 		authService:         service.NewAuthService(userRepo, deps.Config.JWTSecret),
-		postService:         service.NewPostService(postRepo, followRepo, userRepo, hotPostStore, followRelationStore, feedInboxStore),
+		postService:         service.NewPostService(postRepo, followRepo, userRepo, hotPostStore, followRelationStore, feedInboxStore, eventPublisher),
 		followService:       service.NewFollowService(followRepo, userRepo, postRepo, notificationService, followRelationStore, feedInboxStore),
 		interactionService:  service.NewInteractionService(interactionRepo, postRepo, userRepo, notificationService, hotPostStore),
 		commentService:      service.NewCommentService(commentRepo, postRepo, userRepo, notificationService, hotPostStore),
 		notificationService: notificationService,
 	}
 	if err := worker.StartNotificationConsumer(context.Background(), deps.Broker, notificationService); err != nil {
+		panic(err)
+	}
+	if err := worker.StartFeedConsumer(context.Background(), deps.Broker, app.postService); err != nil {
 		panic(err)
 	}
 
