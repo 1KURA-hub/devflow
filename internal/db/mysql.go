@@ -31,6 +31,7 @@ func Open(cfg config.Config) (*gorm.DB, error) {
 			&model.Favorite{},
 			&model.Comment{},
 			&model.Notification{},
+			&model.ProcessedEvent{},
 		); err != nil {
 			return nil, err
 		}

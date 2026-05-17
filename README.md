@@ -11,6 +11,7 @@ Current stage:
 - Redis-backed unread notification count cache
 - Redis-backed following relation cache
 - Redis-backed following feed inbox
+- RabbitMQ-backed async notification and feed workers
 
 ## Run
 

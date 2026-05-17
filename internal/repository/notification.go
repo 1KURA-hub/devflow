@@ -7,6 +7,7 @@ import (
 
 	"devflow/internal/model"
 
+	mysqldriver "github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 )
 
@@ -20,6 +21,27 @@ func NewNotificationRepository(db *gorm.DB) *NotificationRepository {
 
 func (r *NotificationRepository) Create(ctx context.Context, notification *model.Notification) error {
 	return r.db.WithContext(ctx).Create(notification).Error
+}
+
+func (r *NotificationRepository) CreateOnce(ctx context.Context, eventID string, notification *model.Notification) (bool, error) {
+	created := false
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&model.ProcessedEvent{
+			EventID:   eventID,
+			EventType: notification.Type,
+		}).Error; err != nil {
+			if isDuplicateEntry(err) {
+				return nil
+			}
+			return err
+		}
+		if err := tx.Create(notification).Error; err != nil {
+			return err
+		}
+		created = true
+		return nil
+	})
+	return created, err
 }
 
 func (r *NotificationRepository) ListByUser(ctx context.Context, userID uint64, cursor *time.Time, limit int) ([]model.Notification, error) {
@@ -80,4 +102,9 @@ func (r *NotificationRepository) FindByID(ctx context.Context, userID, notificat
 		return nil, err
 	}
 	return &notification, nil
+}
+
+func isDuplicateEntry(err error) bool {
+	var mysqlErr *mysqldriver.MySQLError
+	return errors.As(err, &mysqlErr) && mysqlErr.Number == 1062
 }

@@ -34,6 +34,7 @@ func StartNotificationConsumer(ctx context.Context, broker *mq.Broker, notificat
 					continue
 				}
 				if err := notifications.CreateNow(ctx, service.CreateNotificationInput{
+					EventID:   event.EventID,
 					UserID:    event.UserID,
 					ActorID:   event.ActorID,
 					Type:      event.Type,

@@ -24,6 +24,7 @@ type NotificationService struct {
 }
 
 type CreateNotificationInput struct {
+	EventID   string
 	UserID    uint64
 	ActorID   uint64
 	Type      string
@@ -85,7 +86,7 @@ func (s *NotificationService) CreateNow(ctx context.Context, input CreateNotific
 	if content == "" {
 		content = defaultNotificationContent(input.Type)
 	}
-	if err := s.notifications.Create(ctx, &model.Notification{
+	notification := &model.Notification{
 		UserID:    input.UserID,
 		ActorID:   input.ActorID,
 		Type:      input.Type,
@@ -93,8 +94,19 @@ func (s *NotificationService) CreateNow(ctx context.Context, input CreateNotific
 		CommentID: input.CommentID,
 		Content:   content,
 		IsRead:    false,
-	}); err != nil {
+	}
+	created := true
+	if input.EventID != "" {
+		var err error
+		created, err = s.notifications.CreateOnce(ctx, input.EventID, notification)
+		if err != nil {
+			return err
+		}
+	} else if err := s.notifications.Create(ctx, notification); err != nil {
 		return err
+	}
+	if !created {
+		return nil
 	}
 	_ = s.counter.IncrementIfExists(ctx, input.UserID)
 	return nil
