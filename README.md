@@ -16,7 +16,7 @@ Current stage:
 
 ```bash
 cp .env.example .env
-docker compose up -d mysql redis
+docker compose up -d mysql redis rabbitmq
 go run ./cmd/server
 ```
 

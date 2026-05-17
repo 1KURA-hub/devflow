@@ -4,6 +4,7 @@ import (
 	"devflow/internal/cache"
 	"devflow/internal/config"
 	"devflow/internal/middleware"
+	"devflow/internal/mq"
 	"devflow/internal/repository"
 	"devflow/internal/response"
 	"devflow/internal/service"
@@ -17,6 +18,7 @@ type Dependencies struct {
 	Config      config.Config
 	DB          *gorm.DB
 	RedisClient *redis.Client
+	Broker      *mq.Broker
 }
 
 type App struct {

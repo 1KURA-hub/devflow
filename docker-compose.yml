@@ -31,7 +31,25 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: devflow-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: devflow
+      RABBITMQ_DEFAULT_PASS: devflow
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - devflow_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
 volumes:
   devflow_mysql_data:
   devflow_redis_data:
+  devflow_rabbitmq_data:
