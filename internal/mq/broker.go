@@ -2,6 +2,7 @@ package mq
 
 import (
 	"context"
+	"encoding/json"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -43,6 +44,55 @@ func (b *Broker) Close() error {
 		return nil
 	}
 	return b.conn.Close()
+}
+
+func (b *Broker) PublishJSON(ctx context.Context, routingKey string, payload any) error {
+	if b == nil || b.conn == nil {
+		return nil
+	}
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	channel, err := b.conn.Channel()
+	if err != nil {
+		return err
+	}
+	defer channel.Close()
+
+	return channel.PublishWithContext(
+		ctx,
+		ExchangeEvents,
+		routingKey,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType:  "application/json",
+			DeliveryMode: amqp.Persistent,
+			Body:         body,
+		},
+	)
+}
+
+func (b *Broker) Consume(queueName, consumerName string) (<-chan amqp.Delivery, error) {
+	channel, err := b.conn.Channel()
+	if err != nil {
+		return nil, err
+	}
+	if err := channel.Qos(1, 0, false); err != nil {
+		_ = channel.Close()
+		return nil, err
+	}
+	return channel.Consume(
+		queueName,
+		consumerName,
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
 }
 
 func (b *Broker) declareTopology(ctx context.Context) error {

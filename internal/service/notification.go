@@ -6,6 +6,7 @@ import (
 
 	"devflow/internal/cache"
 	"devflow/internal/model"
+	"devflow/internal/mq"
 	"devflow/internal/repository"
 )
 
@@ -19,6 +20,7 @@ const (
 type NotificationService struct {
 	notifications *repository.NotificationRepository
 	counter       *cache.NotificationCounter
+	publisher     *mq.Publisher
 }
 
 type CreateNotificationInput struct {
@@ -36,14 +38,44 @@ type NotificationListResult struct {
 	HasMore    bool                 `json:"has_more"`
 }
 
-func NewNotificationService(notifications *repository.NotificationRepository, counter *cache.NotificationCounter) *NotificationService {
+func NewNotificationService(notifications *repository.NotificationRepository, counter *cache.NotificationCounter, publisher *mq.Publisher) *NotificationService {
 	return &NotificationService{
 		notifications: notifications,
 		counter:       counter,
+		publisher:     publisher,
 	}
 }
 
 func (s *NotificationService) Create(ctx context.Context, input CreateNotificationInput) error {
+	if input.UserID == 0 || input.ActorID == 0 || input.UserID == input.ActorID || input.Type == "" {
+		return nil
+	}
+	content := input.Content
+	if content == "" {
+		content = defaultNotificationContent(input.Type)
+	}
+	if s.publisher != nil {
+		return s.publisher.PublishNotification(ctx, mq.NotificationEvent{
+			EventID:   mq.NewEventID(),
+			UserID:    input.UserID,
+			ActorID:   input.ActorID,
+			Type:      input.Type,
+			PostID:    input.PostID,
+			CommentID: input.CommentID,
+			Content:   content,
+		})
+	}
+	return s.CreateNow(ctx, CreateNotificationInput{
+		UserID:    input.UserID,
+		ActorID:   input.ActorID,
+		Type:      input.Type,
+		PostID:    input.PostID,
+		CommentID: input.CommentID,
+		Content:   content,
+	})
+}
+
+func (s *NotificationService) CreateNow(ctx context.Context, input CreateNotificationInput) error {
 	if input.UserID == 0 || input.ActorID == 0 || input.UserID == input.ActorID || input.Type == "" {
 		return nil
 	}

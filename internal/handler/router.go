@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+
 	"devflow/internal/cache"
 	"devflow/internal/config"
 	"devflow/internal/middleware"
@@ -8,6 +10,7 @@ import (
 	"devflow/internal/repository"
 	"devflow/internal/response"
 	"devflow/internal/service"
+	"devflow/internal/worker"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -47,7 +50,8 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	hotPostStore := cache.NewHotPostStore(deps.RedisClient)
 	followRelationStore := cache.NewFollowRelationStore(deps.RedisClient)
 	feedInboxStore := cache.NewFeedInboxStore(deps.RedisClient)
-	notificationService := service.NewNotificationService(notificationRepo, notificationCounter)
+	eventPublisher := mq.NewPublisher(deps.Broker)
+	notificationService := service.NewNotificationService(notificationRepo, notificationCounter, eventPublisher)
 	app := &App{
 		cfg:                 deps.Config,
 		db:                  deps.DB,
@@ -57,6 +61,9 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		interactionService:  service.NewInteractionService(interactionRepo, postRepo, userRepo, notificationService, hotPostStore),
 		commentService:      service.NewCommentService(commentRepo, postRepo, userRepo, notificationService, hotPostStore),
 		notificationService: notificationService,
+	}
+	if err := worker.StartNotificationConsumer(context.Background(), deps.Broker, notificationService); err != nil {
+		panic(err)
 	}
 
 	router := gin.New()
