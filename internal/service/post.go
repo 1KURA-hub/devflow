@@ -18,9 +18,12 @@ const (
 )
 
 type PostService struct {
-	posts    *repository.PostRepository
-	users    *repository.UserRepository
-	hotPosts *cache.HotPostStore
+	posts     *repository.PostRepository
+	follows   *repository.FollowRepository
+	users     *repository.UserRepository
+	hotPosts  *cache.HotPostStore
+	relations *cache.FollowRelationStore
+	inboxes   *cache.FeedInboxStore
 }
 
 type CreatePostInput struct {
@@ -41,11 +44,14 @@ type PostListResult struct {
 	HasMore    bool         `json:"has_more"`
 }
 
-func NewPostService(posts *repository.PostRepository, users *repository.UserRepository, hotPosts *cache.HotPostStore) *PostService {
+func NewPostService(posts *repository.PostRepository, follows *repository.FollowRepository, users *repository.UserRepository, hotPosts *cache.HotPostStore, relations *cache.FollowRelationStore, inboxes *cache.FeedInboxStore) *PostService {
 	return &PostService{
-		posts:    posts,
-		users:    users,
-		hotPosts: hotPosts,
+		posts:     posts,
+		follows:   follows,
+		users:     users,
+		hotPosts:  hotPosts,
+		relations: relations,
+		inboxes:   inboxes,
 	}
 }
 
@@ -72,6 +78,12 @@ func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model
 	}
 	if err := s.posts.Create(ctx, post); err != nil {
 		return nil, err
+	}
+	followerIDs, err := s.listFollowerIDs(ctx, input.AuthorID)
+	if err == nil {
+		for _, followerID := range followerIDs {
+			_ = s.inboxes.AddPost(ctx, followerID, post.ID, post.CreatedAt)
+		}
 	}
 	return post, nil
 }
@@ -167,6 +179,19 @@ func orderPostsByIDs(posts []model.Post, ids []uint64) []model.Post {
 		}
 	}
 	return ordered
+}
+
+func (s *PostService) listFollowerIDs(ctx context.Context, userID uint64) ([]uint64, error) {
+	if ids, hit, err := s.relations.FollowerIDs(ctx, userID); err == nil && hit {
+		return ids, nil
+	}
+
+	ids, err := s.follows.ListFollowerIDs(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	_ = s.relations.SetFollowerIDs(ctx, userID, ids)
+	return ids, nil
 }
 
 func hotScore(likeCount, favoriteCount, commentCount int64) int64 {

@@ -10,6 +10,7 @@ Current stage:
 - follow/unfollow, likes, favorites, comments, notifications
 - Redis-backed unread notification count cache
 - Redis-backed following relation cache
+- Redis-backed following feed inbox
 
 ## Run
 

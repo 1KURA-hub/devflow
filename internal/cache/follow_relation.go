@@ -37,6 +37,14 @@ func (s *FollowRelationStore) SetFollowingIDs(ctx context.Context, userID uint64
 	return s.replaceIDs(ctx, followingSetKey(userID), ids)
 }
 
+func (s *FollowRelationStore) FollowerIDs(ctx context.Context, userID uint64) ([]uint64, bool, error) {
+	return s.ids(ctx, followerSetKey(userID))
+}
+
+func (s *FollowRelationStore) SetFollowerIDs(ctx context.Context, userID uint64, ids []uint64) error {
+	return s.replaceIDs(ctx, followerSetKey(userID), ids)
+}
+
 func (s *FollowRelationStore) AddFollow(ctx context.Context, followerID, followeeID uint64) error {
 	if s == nil || s.client == nil {
 		return nil

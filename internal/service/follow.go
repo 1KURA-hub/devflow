@@ -17,6 +17,7 @@ type FollowService struct {
 	posts         *repository.PostRepository
 	notifications *NotificationService
 	relations     *cache.FollowRelationStore
+	inboxes       *cache.FeedInboxStore
 }
 
 type UserListInput struct {
@@ -28,13 +29,14 @@ type UserListResult struct {
 	Items []model.User `json:"items"`
 }
 
-func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository, notifications *NotificationService, relations *cache.FollowRelationStore) *FollowService {
+func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository, notifications *NotificationService, relations *cache.FollowRelationStore, inboxes *cache.FeedInboxStore) *FollowService {
 	return &FollowService{
 		follows:       follows,
 		users:         users,
 		posts:         posts,
 		notifications: notifications,
 		relations:     relations,
+		inboxes:       inboxes,
 	}
 }
 
@@ -62,6 +64,7 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 		return err
 	}
 	_ = s.relations.AddFollow(ctx, followerID, followeeID)
+	_ = s.inboxes.Delete(ctx, followerID)
 	if s.notifications != nil {
 		return s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:  followeeID,
@@ -87,6 +90,7 @@ func (s *FollowService) Unfollow(ctx context.Context, followerID, followeeID uin
 		return err
 	}
 	_ = s.relations.RemoveFollow(ctx, followerID, followeeID)
+	_ = s.inboxes.Delete(ctx, followerID)
 	return nil
 }
 
@@ -138,6 +142,14 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 			return nil, err
 		}
 		return buildPostListResult(posts, limit), nil
+	}
+
+	if postIDs, available, err := s.inboxes.PostIDs(ctx, userID, input.Cursor, int64(limit+1)); err == nil && available && len(postIDs) > limit {
+		posts, err := s.posts.ListByIDs(ctx, postIDs)
+		if err != nil {
+			return nil, err
+		}
+		return buildPostListResult(orderPostsByIDs(posts, postIDs), limit), nil
 	}
 
 	posts, err := s.posts.ListByAuthorIDs(ctx, followingIDs, input.Cursor, limit+1)
