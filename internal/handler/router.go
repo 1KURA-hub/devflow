@@ -8,12 +8,14 @@ import (
 	"devflow/internal/service"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
 type Dependencies struct {
-	Config config.Config
-	DB     *gorm.DB
+	Config      config.Config
+	DB          *gorm.DB
+	RedisClient *redis.Client
 }
 
 type App struct {

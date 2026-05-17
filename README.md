@@ -13,7 +13,7 @@ Current stage:
 
 ```bash
 cp .env.example .env
-docker compose up -d mysql
+docker compose up -d mysql redis
 go run ./cmd/server
 ```
 

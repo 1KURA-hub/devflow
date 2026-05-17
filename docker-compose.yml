@@ -18,6 +18,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+  redis:
+    image: redis:7.4-alpine
+    container_name: devflow-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - devflow_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
 volumes:
   devflow_mysql_data:
+  devflow_redis_data:

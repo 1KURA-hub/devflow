@@ -9,6 +9,7 @@ type Config struct {
 	AppEnv      string
 	HTTPAddr    string
 	MySQLDSN    string
+	RedisAddr   string
 	AutoMigrate bool
 	JWTSecret   string
 }
@@ -18,6 +19,7 @@ func Load() Config {
 		AppEnv:      getEnv("APP_ENV", "dev"),
 		HTTPAddr:    getEnv("HTTP_ADDR", ":8080"),
 		MySQLDSN:    getEnv("MYSQL_DSN", "devflow:devflow@tcp(127.0.0.1:3307)/devflow?charset=utf8mb4&parseTime=True&loc=Local"),
+		RedisAddr:   getEnv("REDIS_ADDR", ""),
 		AutoMigrate: getBoolEnv("AUTO_MIGRATE", false),
 		JWTSecret:   getEnv("JWT_SECRET", "devflow-dev-secret"),
 	}
