@@ -9,6 +9,7 @@ Current stage:
 - posts, latest feed, hot feed, following feed with cold-start fallback
 - follow/unfollow, likes, favorites, comments, notifications
 - Redis-backed unread notification count cache
+- Redis-backed following relation cache
 
 ## Run
 

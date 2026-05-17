@@ -43,13 +43,14 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	notificationRepo := repository.NewNotificationRepository(deps.DB)
 	notificationCounter := cache.NewNotificationCounter(deps.RedisClient)
 	hotPostStore := cache.NewHotPostStore(deps.RedisClient)
+	followRelationStore := cache.NewFollowRelationStore(deps.RedisClient)
 	notificationService := service.NewNotificationService(notificationRepo, notificationCounter)
 	app := &App{
 		cfg:                 deps.Config,
 		db:                  deps.DB,
 		authService:         service.NewAuthService(userRepo, deps.Config.JWTSecret),
 		postService:         service.NewPostService(postRepo, userRepo, hotPostStore),
-		followService:       service.NewFollowService(followRepo, userRepo, postRepo, notificationService),
+		followService:       service.NewFollowService(followRepo, userRepo, postRepo, notificationService, followRelationStore),
 		interactionService:  service.NewInteractionService(interactionRepo, postRepo, userRepo, notificationService, hotPostStore),
 		commentService:      service.NewCommentService(commentRepo, postRepo, userRepo, notificationService, hotPostStore),
 		notificationService: notificationService,

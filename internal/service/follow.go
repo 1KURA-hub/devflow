@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"devflow/internal/cache"
 	"devflow/internal/model"
 	"devflow/internal/repository"
 )
@@ -15,6 +16,7 @@ type FollowService struct {
 	users         *repository.UserRepository
 	posts         *repository.PostRepository
 	notifications *NotificationService
+	relations     *cache.FollowRelationStore
 }
 
 type UserListInput struct {
@@ -26,12 +28,13 @@ type UserListResult struct {
 	Items []model.User `json:"items"`
 }
 
-func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository, notifications *NotificationService) *FollowService {
+func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository, notifications *NotificationService, relations *cache.FollowRelationStore) *FollowService {
 	return &FollowService{
 		follows:       follows,
 		users:         users,
 		posts:         posts,
 		notifications: notifications,
+		relations:     relations,
 	}
 }
 
@@ -58,6 +61,7 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 	}); err != nil {
 		return err
 	}
+	_ = s.relations.AddFollow(ctx, followerID, followeeID)
 	if s.notifications != nil {
 		return s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:  followeeID,
@@ -82,6 +86,7 @@ func (s *FollowService) Unfollow(ctx context.Context, followerID, followeeID uin
 		}
 		return err
 	}
+	_ = s.relations.RemoveFollow(ctx, followerID, followeeID)
 	return nil
 }
 
@@ -123,11 +128,11 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 		return nil, err
 	}
 	limit := normalizeLimit(input.Limit)
-	followingCount, err := s.follows.CountFollowing(ctx, userID)
+	followingIDs, err := s.listFollowingIDs(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	if followingCount == 0 {
+	if len(followingIDs) == 0 {
 		posts, err := s.posts.ListLatest(ctx, input.Cursor, limit+1)
 		if err != nil {
 			return nil, err
@@ -135,11 +140,24 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 		return buildPostListResult(posts, limit), nil
 	}
 
-	posts, err := s.posts.ListFollowing(ctx, userID, input.Cursor, limit+1)
+	posts, err := s.posts.ListByAuthorIDs(ctx, followingIDs, input.Cursor, limit+1)
 	if err != nil {
 		return nil, err
 	}
 	return buildPostListResult(posts, limit), nil
+}
+
+func (s *FollowService) listFollowingIDs(ctx context.Context, userID uint64) ([]uint64, error) {
+	if ids, hit, err := s.relations.FollowingIDs(ctx, userID); err == nil && hit {
+		return ids, nil
+	}
+
+	ids, err := s.follows.ListFollowingIDs(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	_ = s.relations.SetFollowingIDs(ctx, userID, ids)
+	return ids, nil
 }
 
 func normalizeLimitOffset(limit, offset int) (int, int) {
