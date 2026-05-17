@@ -6,7 +6,7 @@ Current stage:
 
 - MySQL MVP backend is implemented
 - auth register/login/me APIs
-- posts, latest feed, following feed with cold-start fallback
+- posts, latest feed, hot feed, following feed with cold-start fallback
 - follow/unfollow, likes, favorites, comments, notifications
 - Redis-backed unread notification count cache
 
@@ -34,6 +34,7 @@ DELETE /api/users/:id/follow
 GET /api/users/:id/following
 GET /api/users/:id/followers
 GET /api/feed/latest
+GET /api/feed/hot
 GET /api/feed/following
 POST /api/posts/:id/like
 DELETE /api/posts/:id/like

@@ -52,6 +52,30 @@ func (r *PostRepository) ListLatest(ctx context.Context, cursor *time.Time, limi
 	return posts, nil
 }
 
+func (r *PostRepository) ListHot(ctx context.Context, limit int) ([]model.Post, error) {
+	var posts []model.Post
+	err := r.db.WithContext(ctx).
+		Where("status = ? AND (like_count * 3 + favorite_count * 5 + comment_count * 4) > 0", 1).
+		Order("(like_count * 3 + favorite_count * 5 + comment_count * 4) DESC").
+		Order("created_at DESC").
+		Order("id DESC").
+		Limit(limit).
+		Find(&posts).Error
+	return posts, err
+}
+
+func (r *PostRepository) ListByIDs(ctx context.Context, ids []uint64) ([]model.Post, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var posts []model.Post
+	err := r.db.WithContext(ctx).
+		Where("id IN ? AND status = ?", ids, 1).
+		Find(&posts).Error
+	return posts, err
+}
+
 func (r *PostRepository) ListFavoritedByUser(ctx context.Context, userID uint64, cursor *time.Time, limit int) ([]model.Post, error) {
 	query := r.db.WithContext(ctx).
 		Model(&model.Post{}).

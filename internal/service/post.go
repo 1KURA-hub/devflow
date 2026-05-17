@@ -7,6 +7,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"devflow/internal/cache"
 	"devflow/internal/model"
 	"devflow/internal/repository"
 )
@@ -17,8 +18,9 @@ const (
 )
 
 type PostService struct {
-	posts *repository.PostRepository
-	users *repository.UserRepository
+	posts    *repository.PostRepository
+	users    *repository.UserRepository
+	hotPosts *cache.HotPostStore
 }
 
 type CreatePostInput struct {
@@ -39,10 +41,11 @@ type PostListResult struct {
 	HasMore    bool         `json:"has_more"`
 }
 
-func NewPostService(posts *repository.PostRepository, users *repository.UserRepository) *PostService {
+func NewPostService(posts *repository.PostRepository, users *repository.UserRepository, hotPosts *cache.HotPostStore) *PostService {
 	return &PostService{
-		posts: posts,
-		users: users,
+		posts:    posts,
+		users:    users,
+		hotPosts: hotPosts,
 	}
 }
 
@@ -83,6 +86,23 @@ func (s *PostService) Get(ctx context.Context, id uint64) (*model.Post, error) {
 func (s *PostService) ListLatest(ctx context.Context, input ListInput) (*PostListResult, error) {
 	limit := normalizeLimit(input.Limit)
 	posts, err := s.posts.ListLatest(ctx, input.Cursor, limit+1)
+	if err != nil {
+		return nil, err
+	}
+	return buildPostListResult(posts, limit), nil
+}
+
+func (s *PostService) ListHot(ctx context.Context, input ListInput) (*PostListResult, error) {
+	limit := normalizeLimit(input.Limit)
+	if ids, available, err := s.hotPosts.TopPostIDs(ctx, int64(limit+1)); err == nil && available && len(ids) > 0 {
+		posts, err := s.posts.ListByIDs(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
+		return buildPostListResult(orderPostsByIDs(posts, ids), limit), nil
+	}
+
+	posts, err := s.posts.ListHot(ctx, limit+1)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +152,25 @@ func buildPostListResult(posts []model.Post, limit int) *PostListResult {
 		result.NextCursor = posts[len(posts)-1].CreatedAt.Format(time.RFC3339Nano)
 	}
 	return result
+}
+
+func orderPostsByIDs(posts []model.Post, ids []uint64) []model.Post {
+	postsByID := make(map[uint64]model.Post, len(posts))
+	for _, post := range posts {
+		postsByID[post.ID] = post
+	}
+
+	ordered := make([]model.Post, 0, len(posts))
+	for _, id := range ids {
+		if post, ok := postsByID[id]; ok {
+			ordered = append(ordered, post)
+		}
+	}
+	return ordered
+}
+
+func hotScore(likeCount, favoriteCount, commentCount int64) int64 {
+	return likeCount*3 + favoriteCount*5 + commentCount*4
 }
 
 func normalizeTags(tags string) string {

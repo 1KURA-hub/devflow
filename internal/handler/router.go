@@ -42,15 +42,16 @@ func NewRouter(deps Dependencies) *gin.Engine {
 	commentRepo := repository.NewCommentRepository(deps.DB)
 	notificationRepo := repository.NewNotificationRepository(deps.DB)
 	notificationCounter := cache.NewNotificationCounter(deps.RedisClient)
+	hotPostStore := cache.NewHotPostStore(deps.RedisClient)
 	notificationService := service.NewNotificationService(notificationRepo, notificationCounter)
 	app := &App{
 		cfg:                 deps.Config,
 		db:                  deps.DB,
 		authService:         service.NewAuthService(userRepo, deps.Config.JWTSecret),
-		postService:         service.NewPostService(postRepo, userRepo),
+		postService:         service.NewPostService(postRepo, userRepo, hotPostStore),
 		followService:       service.NewFollowService(followRepo, userRepo, postRepo, notificationService),
-		interactionService:  service.NewInteractionService(interactionRepo, postRepo, userRepo, notificationService),
-		commentService:      service.NewCommentService(commentRepo, postRepo, userRepo, notificationService),
+		interactionService:  service.NewInteractionService(interactionRepo, postRepo, userRepo, notificationService, hotPostStore),
+		commentService:      service.NewCommentService(commentRepo, postRepo, userRepo, notificationService, hotPostStore),
 		notificationService: notificationService,
 	}
 
@@ -70,6 +71,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 		api.GET("/users/:id/following", app.listFollowingUsers)
 		api.GET("/users/:id/followers", app.listFollowerUsers)
 		api.GET("/feed/latest", app.listLatestPosts)
+		api.GET("/feed/hot", app.listHotPosts)
 
 		authenticated := api.Group("")
 		authenticated.Use(middleware.Auth(deps.Config.JWTSecret))

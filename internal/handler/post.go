@@ -76,6 +76,21 @@ func (a *App) listLatestPosts(c *gin.Context) {
 	response.OK(c, result)
 }
 
+func (a *App) listHotPosts(c *gin.Context) {
+	input, err := parseListQuery(c)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	result, err := a.postService.ListHot(c.Request.Context(), input)
+	if err != nil {
+		writePostError(c, err)
+		return
+	}
+	response.OK(c, result)
+}
+
 func (a *App) listUserPosts(c *gin.Context) {
 	userID, err := parseUint64Param(c, "id")
 	if err != nil {

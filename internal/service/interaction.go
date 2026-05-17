@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 
+	"devflow/internal/cache"
 	"devflow/internal/repository"
 )
 
@@ -11,14 +12,16 @@ type InteractionService struct {
 	posts         *repository.PostRepository
 	users         *repository.UserRepository
 	notifications *NotificationService
+	hotPosts      *cache.HotPostStore
 }
 
-func NewInteractionService(interactions *repository.InteractionRepository, posts *repository.PostRepository, users *repository.UserRepository, notifications *NotificationService) *InteractionService {
+func NewInteractionService(interactions *repository.InteractionRepository, posts *repository.PostRepository, users *repository.UserRepository, notifications *NotificationService, hotPosts *cache.HotPostStore) *InteractionService {
 	return &InteractionService{
 		interactions:  interactions,
 		posts:         posts,
 		users:         users,
 		notifications: notifications,
+		hotPosts:      hotPosts,
 	}
 }
 
@@ -34,8 +37,12 @@ func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) (b
 		return false, err
 	}
 	changed, err := s.interactions.AddLike(ctx, userID, postID)
-	if err != nil || !changed || s.notifications == nil {
+	if err != nil || !changed {
 		return changed, err
+	}
+	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount+1, post.FavoriteCount, post.CommentCount))
+	if s.notifications == nil {
+		return changed, nil
 	}
 	return changed, s.notifications.Create(ctx, CreateNotificationInput{
 		UserID:  post.AuthorID,
@@ -50,10 +57,16 @@ func (s *InteractionService) Unlike(ctx context.Context, userID, postID uint64) 
 	if userID == 0 || postID == 0 {
 		return false, ErrInvalidInput
 	}
-	if _, err := s.posts.FindByID(ctx, postID); err != nil {
+	post, err := s.posts.FindByID(ctx, postID)
+	if err != nil {
 		return false, err
 	}
-	return s.interactions.RemoveLike(ctx, userID, postID)
+	changed, err := s.interactions.RemoveLike(ctx, userID, postID)
+	if err != nil || !changed {
+		return changed, err
+	}
+	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount-1, post.FavoriteCount, post.CommentCount))
+	return changed, nil
 }
 
 func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64) (bool, error) {
@@ -68,8 +81,12 @@ func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64
 		return false, err
 	}
 	changed, err := s.interactions.AddFavorite(ctx, userID, postID)
-	if err != nil || !changed || s.notifications == nil {
+	if err != nil || !changed {
 		return changed, err
+	}
+	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount+1, post.CommentCount))
+	if s.notifications == nil {
+		return changed, nil
 	}
 	return changed, s.notifications.Create(ctx, CreateNotificationInput{
 		UserID:  post.AuthorID,
@@ -84,10 +101,16 @@ func (s *InteractionService) Unfavorite(ctx context.Context, userID, postID uint
 	if userID == 0 || postID == 0 {
 		return false, ErrInvalidInput
 	}
-	if _, err := s.posts.FindByID(ctx, postID); err != nil {
+	post, err := s.posts.FindByID(ctx, postID)
+	if err != nil {
 		return false, err
 	}
-	return s.interactions.RemoveFavorite(ctx, userID, postID)
+	changed, err := s.interactions.RemoveFavorite(ctx, userID, postID)
+	if err != nil || !changed {
+		return changed, err
+	}
+	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount-1, post.CommentCount))
+	return changed, nil
 }
 
 func (s *InteractionService) ListMyFavorites(ctx context.Context, userID uint64, input ListInput) (*PostListResult, error) {

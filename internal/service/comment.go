@@ -6,6 +6,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"devflow/internal/cache"
 	"devflow/internal/model"
 	"devflow/internal/repository"
 )
@@ -15,6 +16,7 @@ type CommentService struct {
 	posts         *repository.PostRepository
 	users         *repository.UserRepository
 	notifications *NotificationService
+	hotPosts      *cache.HotPostStore
 }
 
 type CreateCommentInput struct {
@@ -29,12 +31,13 @@ type CommentListResult struct {
 	HasMore    bool            `json:"has_more"`
 }
 
-func NewCommentService(comments *repository.CommentRepository, posts *repository.PostRepository, users *repository.UserRepository, notifications *NotificationService) *CommentService {
+func NewCommentService(comments *repository.CommentRepository, posts *repository.PostRepository, users *repository.UserRepository, notifications *NotificationService, hotPosts *cache.HotPostStore) *CommentService {
 	return &CommentService{
 		comments:      comments,
 		posts:         posts,
 		users:         users,
 		notifications: notifications,
+		hotPosts:      hotPosts,
 	}
 }
 
@@ -63,6 +66,7 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	if err := s.comments.Create(ctx, comment); err != nil {
 		return nil, err
 	}
+	_ = s.hotPosts.SetScore(ctx, input.PostID, hotScore(post.LikeCount, post.FavoriteCount, post.CommentCount+1))
 	if s.notifications != nil {
 		if err := s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:    post.AuthorID,
