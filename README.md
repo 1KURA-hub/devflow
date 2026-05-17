@@ -12,6 +12,7 @@ Current stage:
 - Redis-backed following relation cache
 - Redis-backed following feed inbox
 - RabbitMQ-backed async notification and feed workers
+- React frontend for feeds, profiles, favorites, notifications, and publishing
 
 ## Run
 
@@ -19,6 +20,14 @@ Current stage:
 cp .env.example .env
 docker compose up -d mysql redis rabbitmq
 go run ./cmd/server
+```
+
+Frontend:
+
+```bash
+cd web
+npm install
+npm run dev
 ```
 
 The server exposes:
