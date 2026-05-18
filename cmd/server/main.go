@@ -35,12 +35,13 @@ func main() {
 		defer broker.Close()
 	}
 
-	router := handler.NewRouter(handler.Dependencies{
+	app := handler.NewApp(handler.Dependencies{
 		Config:      cfg,
 		DB:          database,
 		RedisClient: redisClient,
 		Broker:      broker,
 	})
+	router := handler.NewRouter(app)
 
 	log.Printf("devflow server listening on %s", cfg.HTTPAddr)
 	if err := router.Run(cfg.HTTPAddr); err != nil {
