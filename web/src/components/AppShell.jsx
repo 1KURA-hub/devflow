@@ -131,7 +131,6 @@ export function AppShell() {
           </button>
           <button
             type="button"
-            className={richFeed ? "active" : ""}
             onClick={() => setRichFeed((value) => !value)}
             aria-label="切换动态显示模式"
           >

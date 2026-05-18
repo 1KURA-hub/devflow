@@ -6,7 +6,6 @@ import { FeedList } from "../components/FeedList";
 import { useAuth } from "../state/auth";
 
 const topics = ["Go", "Redis", "微服务", "Docker", "K8s", "并发编程", "AI", "RAG", "设计模式", "Linux", "数据库", "DevOps"];
-const follows = ["刘超的技术博客", "编程导航", "Go 夜读", "前端西瓜哥"];
 
 export function FeedPage({ mode }) {
   const { user } = useAuth();
@@ -87,7 +86,7 @@ export function FeedPage({ mode }) {
             <input placeholder="搜索内容、标签或用户" />
           </label>
           <button className="glass-pill add-pill" type="button" onClick={openComposer} aria-label="创建动态">
-            <Plus size={20} />
+            <Plus size={18} />
           </button>
         </div>
 
@@ -111,11 +110,6 @@ export function FeedPage({ mode }) {
               <dd>1,324</dd>
             </div>
           </dl>
-          <p>
-            Lv.6
-            <span />
-            1280 / 2000
-          </p>
         </section>
 
         <section className="glass-panel rail-card">
@@ -126,25 +120,6 @@ export function FeedPage({ mode }) {
           <div className="topic-grid">
             {topics.map((topic) => (
               <span key={topic}>{topic}</span>
-            ))}
-          </div>
-        </section>
-
-        <section className="glass-panel rail-card">
-          <header>
-            <h2>推荐关注</h2>
-            <button type="button">换一换</button>
-          </header>
-          <div className="follow-list">
-            {follows.map((follow) => (
-              <article className="follow-item" key={follow}>
-                <div className="tiny-avatar">{follow.slice(0, 1)}</div>
-                <div>
-                  <strong>{follow}</strong>
-                  <span>优质技术资源分享</span>
-                </div>
-                <button type="button">关注</button>
-              </article>
             ))}
           </div>
         </section>

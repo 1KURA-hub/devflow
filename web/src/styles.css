@@ -51,8 +51,9 @@ button {
 
 .app-shell {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
   overflow-x: hidden;
+  overflow-y: hidden;
   background:
     linear-gradient(rgba(228, 240, 250, 0.14), rgba(228, 240, 250, 0.14)),
     url("./assets/devflow-wallpaper.jpg") center / cover fixed;
@@ -70,17 +71,18 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
-  min-height: 100vh;
+  height: 100vh;
   grid-template-columns: 268px minmax(0, 1fr);
   gap: 28px;
   padding: 28px;
+  overflow: hidden;
 }
 
 .glass-panel,
 .glass-pill,
 .surface {
   border: 1px solid var(--line);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(239, 247, 255, 0.34));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(239, 247, 255, 0.4));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
     var(--shadow);
@@ -93,12 +95,11 @@ button {
 }
 
 .sidebar {
-  position: sticky;
-  top: 28px;
   display: grid;
   align-self: start;
   gap: 24px;
-  min-height: calc(100vh - 56px);
+  min-height: 0;
+  height: calc(100vh - 130px);
   padding: 26px 20px 24px;
   border-radius: var(--radius-xl);
 }
@@ -119,7 +120,19 @@ button {
   color: #fff;
   font-size: 15px;
   font-weight: 700;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 8px 18px rgba(44, 99, 230, 0.18);
+}
+
+.brand-mark svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .brand-word {
@@ -246,6 +259,8 @@ button {
 
 .workspace {
   min-width: 0;
+  min-height: 0;
+  height: calc(100vh - 56px);
   padding-top: 0;
 }
 
@@ -254,7 +269,7 @@ button {
   align-items: center;
   gap: 10px;
   flex: 1;
-  min-height: 48px;
+  height: 44px;
   padding: 0 18px;
 }
 
@@ -276,12 +291,12 @@ button {
 
 .add-pill {
   display: grid;
-  width: 58px;
-  height: 48px;
+  width: 48px;
+  height: 44px;
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.64);
-  border-radius: 20px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.48), rgba(237, 245, 252, 0.3));
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(237, 245, 252, 0.38));
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -290,10 +305,13 @@ button {
 
 .page-shell {
   width: min(1270px, 100%);
+  height: 100%;
 }
 
 .dashboard-layout {
   display: grid;
+  height: 100%;
+  min-height: 0;
   grid-template-columns: minmax(610px, 830px) minmax(280px, 360px);
   justify-content: space-between;
   gap: 28px;
@@ -309,13 +327,23 @@ button {
 }
 
 .feed-frame {
+  display: grid;
+  min-height: 0;
+  height: 100%;
   border-radius: var(--radius-xl);
   padding: 14px;
+  overflow: hidden;
+}
+
+.feed-column {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .inset-panel {
   border: 1px solid rgba(255, 255, 255, 0.54);
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.34);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(18px) saturate(135%);
   -webkit-backdrop-filter: blur(18px) saturate(135%);
@@ -415,7 +443,7 @@ button {
   gap: 10px;
   padding: 16px 18px;
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(238, 246, 255, 0.3));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(238, 246, 255, 0.38));
   border: 1px solid var(--line);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -427,7 +455,7 @@ button {
 
 .post-card:hover {
   transform: translateY(-2px);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(238, 246, 255, 0.38));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(238, 246, 255, 0.46));
 }
 
 .post-preview {
@@ -507,13 +535,17 @@ button {
 }
 
 .dashboard-rail {
+  min-height: 0;
+  height: 100%;
   gap: 14px;
+  overflow: hidden;
 }
 
 .rail-tools {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-height: 44px;
 }
 
 .user-summary,
@@ -546,23 +578,6 @@ button {
   font-weight: 700;
 }
 
-.user-summary p {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.user-summary p span {
-  flex: 1;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent) 0 62%, rgba(255, 255, 255, 0.34) 62%);
-}
-
 .rail-card {
   display: grid;
   gap: 14px;
@@ -586,42 +601,6 @@ button {
   gap: 8px;
 }
 
-.follow-list {
-  display: grid;
-  gap: 10px;
-}
-
-.follow-list article {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 10px;
-  align-items: center;
-  padding: 2px 0;
-}
-
-.tiny-avatar {
-  width: 34px;
-  height: 34px;
-}
-
-.follow-list button {
-  min-width: 54px;
-  min-height: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.4);
-  color: var(--accent);
-  font-size: 12px;
-}
-
-.follow-list strong {
-  font-size: 14px;
-}
-
-.follow-list span {
-  font-size: 12px;
-}
-
 .overview-card {
   grid-template-columns: repeat(2, 1fr);
 }
@@ -643,9 +622,9 @@ button {
 }
 
 .sidebar-utilities {
-  position: sticky;
+  position: absolute;
   bottom: 28px;
-  left: 0;
+  left: 55px;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -653,12 +632,8 @@ button {
   width: 214px;
   min-height: 58px;
   justify-content: space-between;
-  align-self: end;
-  margin-left: 22px;
-  margin-top: auto;
-  margin-bottom: -6px;
   padding: 6px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(236, 245, 252, 0.32));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(236, 245, 252, 0.4));
 }
 
 .sidebar-utilities button {
@@ -670,11 +645,6 @@ button {
   border-radius: 999px;
   background: transparent;
   color: rgba(22, 35, 61, 0.74);
-}
-
-.sidebar-utilities button.active {
-  background: rgba(255, 255, 255, 0.58);
-  color: var(--accent);
 }
 
 .state-box,
@@ -945,18 +915,43 @@ textarea:focus {
 }
 
 @media (max-width: 1180px) {
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
   .desktop-shell {
+    height: auto;
+    min-height: 100vh;
     grid-template-columns: 1fr;
+    overflow: visible;
   }
 
   .sidebar {
     position: relative;
     top: auto;
+    height: auto;
     min-height: auto;
   }
 
   .workspace {
+    height: auto;
+    min-height: auto;
     padding-top: 0;
+  }
+
+  .page-shell,
+  .dashboard-layout,
+  .feed-frame,
+  .dashboard-rail {
+    height: auto;
+  }
+
+  .feed-column,
+  .dashboard-rail {
+    overflow-y: visible;
+    padding-right: 0;
   }
 
   .dashboard-layout {
@@ -964,8 +959,7 @@ textarea:focus {
   }
 
   .sidebar-utilities {
-    position: sticky;
-    left: 0;
+    position: static;
   }
 }
 
