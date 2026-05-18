@@ -30,6 +30,17 @@ npm install
 npm run dev
 ```
 
+## Production deployment
+
+```bash
+cp .env.prod.example .env.prod
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build mysql redis rabbitmq app web
+docker compose --env-file .env.prod -f docker-compose.prod.yml run --rm seed
+```
+
+The production web container serves the React build and proxies `/api/*` to the Go app.
+The demo seed command creates reusable showcase data, including users, avatar URLs, posts, follow relations, likes, favorites, comments, and notifications.
+
 The server exposes:
 
 ```text
