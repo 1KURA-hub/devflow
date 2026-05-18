@@ -103,6 +103,9 @@ export function AppShell() {
                 </div>
               </>
             )}
+            <button type="button" aria-label="设置">
+              <Settings size={16} />
+            </button>
           </section>
 
           <div className="sidebar-links">
@@ -113,10 +116,6 @@ export function AppShell() {
                 <span>3</span>
               </button>
             ) : null}
-            <button type="button">
-              <Settings size={17} />
-              设置
-            </button>
           </div>
         </aside>
 
