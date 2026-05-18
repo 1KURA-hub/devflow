@@ -535,10 +535,18 @@ button {
 }
 
 .dashboard-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   min-height: 0;
   height: 100%;
-  gap: 14px;
   overflow: hidden;
+}
+
+.rail-top {
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
 .rail-tools {
@@ -557,7 +565,7 @@ button {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 12px;
-  padding: 20px;
+  padding: 18px 20px;
 }
 
 .user-summary dl {
@@ -581,7 +589,7 @@ button {
 .rail-card {
   display: grid;
   gap: 14px;
-  padding: 20px;
+  padding: 18px 20px;
 }
 
 .rail-card header {
@@ -599,6 +607,42 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.follow-list {
+  display: grid;
+  gap: 8px;
+}
+
+.follow-list article {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+}
+
+.tiny-avatar {
+  width: 34px;
+  height: 34px;
+}
+
+.follow-list button {
+  min-width: 54px;
+  min-height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.follow-list strong {
+  font-size: 14px;
+}
+
+.follow-list span {
+  font-size: 12px;
 }
 
 .overview-card {
