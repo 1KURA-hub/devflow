@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import {
   Bell,
-  Bookmark,
   DraftingCompass,
   Flame,
   Home,
   Images,
   Rows3,
   Moon,
-  Settings2,
+  Settings,
+  Star,
   SunMedium,
   UserRound
 } from "lucide-react";
@@ -64,14 +64,12 @@ export function AppShell() {
               <Flame size={18} />
               热门
             </NavLink>
-            {user ? (
-              <NavLink to="/following">
-                <UserRound size={18} />
-                关注
-              </NavLink>
-            ) : null}
+            <NavLink to="/following">
+              <UserRound size={18} />
+              关注
+            </NavLink>
             <NavLink to="/favorites">
-              <Bookmark size={18} />
+              <Star size={18} />
               收藏
             </NavLink>
             <NavLink className="badge-nav" to="/notifications">
@@ -108,13 +106,15 @@ export function AppShell() {
           </section>
 
           <div className="sidebar-links">
+            {user ? (
+              <button type="button">
+                <DraftingCompass size={17} />
+                草稿箱
+                <span>3</span>
+              </button>
+            ) : null}
             <button type="button">
-              <DraftingCompass size={17} />
-              草稿箱
-              <span>3</span>
-            </button>
-            <button type="button">
-              <Settings2 size={17} />
+              <Settings size={17} />
               设置
             </button>
           </div>
@@ -139,7 +139,7 @@ export function AppShell() {
             {richFeed ? <Images size={18} /> : <Rows3 size={18} />}
           </button>
           <button type="button" aria-label="快捷设置">
-            <Settings2 size={18} />
+            <Settings size={18} />
           </button>
         </div>
       </div>

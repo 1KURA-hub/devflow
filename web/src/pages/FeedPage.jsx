@@ -137,7 +137,7 @@ export function FeedPage({ mode }) {
           </header>
           <div className="follow-list">
             {follows.map((follow) => (
-              <article className="inset-panel follow-item" key={follow}>
+              <article className="follow-item" key={follow}>
                 <div className="tiny-avatar">{follow.slice(0, 1)}</div>
                 <div>
                   <strong>{follow}</strong>
