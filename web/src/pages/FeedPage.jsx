@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Filter, Image, Link2, Vote, Code2 } from "lucide-react";
+import { Code2, Filter, Image, Link2, Plus, Search, Vote } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import { FeedList } from "../components/FeedList";
@@ -33,52 +33,64 @@ export function FeedPage({ mode }) {
 
   return (
     <div className="dashboard-layout">
-      <section className="feed-column">
-        <button className="glass-panel composer-strip" type="button" onClick={openComposer}>
-          <span className="mini-avatar">{user ? user.nickname.slice(0, 1) : "D"}</span>
-          <span>分享你的技术见解、经验或有趣的想法...</span>
-          <div>
-            <em>
-              <Image size={16} />
-              图片
-            </em>
-            <em>
-              <Code2 size={16} />
-              代码
-            </em>
-            <em>
-              <Link2 size={16} />
-              链接
-            </em>
-            <em>
-              <Vote size={16} />
-              投票
-            </em>
-          </div>
-        </button>
-
-        <div className="glass-panel feed-toolbar">
-          <div>
-            <span className={mode === "latest" ? "active" : ""}>最新</span>
-            <span className={mode === "hot" ? "active" : ""}>热门</span>
-            <span className={mode === "following" ? "active" : ""}>关注</span>
-          </div>
-          <button type="button">
-            <Filter size={16} />
-            筛选
+      <section className="glass-panel feed-frame">
+        <div className="feed-column">
+          <button className="composer-strip inset-panel" type="button" onClick={openComposer}>
+            <span className="mini-avatar">{user ? user.nickname.slice(0, 1) : "D"}</span>
+            <span>分享你的技术见解、经验或有趣的想法...</span>
+            <div>
+              <em>
+                <Image size={15} />
+                图片
+              </em>
+              <em>
+                <Code2 size={15} />
+                代码
+              </em>
+              <em>
+                <Link2 size={15} />
+                链接
+              </em>
+              <em>
+                <Vote size={15} />
+                投票
+              </em>
+            </div>
           </button>
-        </div>
 
-        <FeedList
-          loader={loader}
-          refreshKey={refreshKey}
-          emptyTitle="这里还很安静"
-          emptyText="第一条值得讨论的技术动态，通常就从今天开始。"
-          rich={richFeed}
-        />
+          <div className="feed-toolbar inset-panel">
+            <div>
+              <span className={mode === "latest" ? "active" : ""}>最新</span>
+              <span className={mode === "hot" ? "active" : ""}>热门</span>
+              <span className={mode === "following" ? "active" : ""}>关注</span>
+            </div>
+            <button type="button">
+              <Filter size={15} />
+              筛选
+            </button>
+          </div>
+
+          <FeedList
+            loader={loader}
+            refreshKey={refreshKey}
+            emptyTitle="这里还很安静"
+            emptyText="第一条值得讨论的技术动态，通常就从今天开始。"
+            rich={richFeed}
+          />
+        </div>
       </section>
 
       <aside className="dashboard-rail">
+        <div className="rail-tools">
+          <label className="glass-pill search-pill">
+            <Search size={17} />
+            <input placeholder="搜索内容、标签或用户" />
+          </label>
+          <button className="glass-pill add-pill" type="button" onClick={openComposer} aria-label="创建动态">
+            <Plus size={20} />
+          </button>
+        </div>
+
         <section className="glass-panel user-summary">
           <div className="profile-avatar large">{user ? user.nickname.slice(0, 1) : "L"}</div>
           <div>
@@ -125,7 +137,7 @@ export function FeedPage({ mode }) {
           </header>
           <div className="follow-list">
             {follows.map((follow) => (
-              <article key={follow}>
+              <article className="inset-panel follow-item" key={follow}>
                 <div className="tiny-avatar">{follow.slice(0, 1)}</div>
                 <div>
                   <strong>{follow}</strong>

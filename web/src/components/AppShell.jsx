@@ -5,10 +5,9 @@ import {
   DraftingCompass,
   Flame,
   Home,
+  Images,
   Rows3,
-  MoonStar,
-  Plus,
-  Search,
+  Moon,
   Settings2,
   SunMedium,
   UserRound
@@ -122,16 +121,6 @@ export function AppShell() {
         </aside>
 
         <div className="workspace">
-          <div className="floating-tools">
-            <label className="glass-pill search-pill">
-              <Search size={17} />
-              <input placeholder="搜索内容、标签或用户" />
-            </label>
-            <button className="glass-pill add-pill" type="button" onClick={() => setComposerOpen(true)} aria-label="创建动态">
-              <Plus size={20} />
-            </button>
-          </div>
-
           <main className="page-shell">
             <Outlet context={{ openComposer: () => setComposerOpen(true), richFeed }} />
           </main>
@@ -139,7 +128,7 @@ export function AppShell() {
 
         <div className="sidebar-utilities glass-pill" aria-label="快捷设置">
           <button type="button" onClick={() => setDarkTheme((value) => !value)} aria-label="切换主题">
-            {darkTheme ? <MoonStar size={18} /> : <SunMedium size={18} />}
+            {darkTheme ? <Moon size={18} /> : <SunMedium size={18} />}
           </button>
           <button
             type="button"
@@ -147,7 +136,7 @@ export function AppShell() {
             onClick={() => setRichFeed((value) => !value)}
             aria-label="切换动态显示模式"
           >
-            <Rows3 size={18} />
+            {richFeed ? <Images size={18} /> : <Rows3 size={18} />}
           </button>
           <button type="button" aria-label="快捷设置">
             <Settings2 size={18} />
