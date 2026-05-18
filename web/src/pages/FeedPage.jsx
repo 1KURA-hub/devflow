@@ -1,11 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Filter, Image, Link2, Vote, Code2 } from "lucide-react";
+import { useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
 import { FeedList } from "../components/FeedList";
-import banner from "../assets/devflow-banner.jpg";
 import { useAuth } from "../state/auth";
+
+const topics = ["Go", "Redis", "微服务", "Docker", "K8s", "并发编程", "AI", "RAG", "设计模式", "Linux", "数据库", "DevOps"];
+const follows = ["刘超的技术博客", "编程导航", "Go 夜读", "前端西瓜哥"];
 
 export function FeedPage({ mode }) {
   const { user } = useAuth();
+  const { openComposer, richFeed } = useOutletContext();
   const [refreshKey, setRefreshKey] = useState(0);
   const loader = useCallback(
     (params) => {
@@ -26,60 +31,123 @@ export function FeedPage({ mode }) {
     return () => window.removeEventListener("devflow:post-created", refresh);
   }, []);
 
-  const copy = {
-    latest: {
-      eyebrow: "最新动态",
-      title: "今天，社区里正在推进什么",
-      body: "记录设计取舍、踩坑经验和刚刚完成的改动。"
-    },
-    hot: {
-      eyebrow: "热门动态",
-      title: "被更多开发者回应的内容",
-      body: "按点赞、收藏和评论热度汇总。"
-    },
-    following: {
-      eyebrow: "关注流",
-      title: user ? `${user.nickname} 的订阅流` : "关注流",
-      body: "只看你关注的开发者；还没有关注时，会自动回退到最新动态。"
-    }
-  }[mode];
-
   return (
-    <div className="home-layout">
-      <section className="main-column">
-        <header className="editorial-banner">
-          <img src={banner} alt="" />
+    <div className="dashboard-layout">
+      <section className="feed-column">
+        <button className="glass-panel composer-strip" type="button" onClick={openComposer}>
+          <span className="mini-avatar">{user ? user.nickname.slice(0, 1) : "D"}</span>
+          <span>分享你的技术见解、经验或有趣的想法...</span>
           <div>
-            <p className="eyebrow">{copy.eyebrow}</p>
-            <h1>{copy.title}</h1>
-            <p>{copy.body}</p>
+            <em>
+              <Image size={16} />
+              图片
+            </em>
+            <em>
+              <Code2 size={16} />
+              代码
+            </em>
+            <em>
+              <Link2 size={16} />
+              链接
+            </em>
+            <em>
+              <Vote size={16} />
+              投票
+            </em>
           </div>
-        </header>
+        </button>
+
+        <div className="glass-panel feed-toolbar">
+          <div>
+            <span className={mode === "latest" ? "active" : ""}>最新</span>
+            <span className={mode === "hot" ? "active" : ""}>热门</span>
+            <span className={mode === "following" ? "active" : ""}>关注</span>
+          </div>
+          <button type="button">
+            <Filter size={16} />
+            筛选
+          </button>
+        </div>
+
         <FeedList
           loader={loader}
           refreshKey={refreshKey}
           emptyTitle="这里还很安静"
           emptyText="第一条值得讨论的技术动态，通常就从今天开始。"
+          rich={richFeed}
         />
       </section>
-      <aside className="side-rail">
-        <section className="surface side-panel">
-          <p className="eyebrow">DevFlow</p>
-          <h2>把工程进展讲清楚</h2>
-          <p>短动态、明确上下文、可追踪互动。更像开发者自己的工作流记录。</p>
+
+      <aside className="dashboard-rail">
+        <section className="glass-panel user-summary">
+          <div className="profile-avatar large">{user ? user.nickname.slice(0, 1) : "L"}</div>
+          <div>
+            <strong>{user ? user.nickname : "Lin"}</strong>
+            <span>全栈开发工程师</span>
+          </div>
+          <dl>
+            <div>
+              <dt>动态</dt>
+              <dd>231</dd>
+            </div>
+            <div>
+              <dt>关注</dt>
+              <dd>86</dd>
+            </div>
+            <div>
+              <dt>粉丝</dt>
+              <dd>1,324</dd>
+            </div>
+          </dl>
+          <p>
+            Lv.6
+            <span />
+            1280 / 2000
+          </p>
         </section>
-        <section className="surface side-panel metric-panel">
+
+        <section className="glass-panel rail-card">
+          <header>
+            <h2>热门标签</h2>
+            <button type="button">更多</button>
+          </header>
+          <div className="topic-grid">
+            {topics.map((topic) => (
+              <span key={topic}>{topic}</span>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-panel rail-card">
+          <header>
+            <h2>推荐关注</h2>
+            <button type="button">换一换</button>
+          </header>
+          <div className="follow-list">
+            {follows.map((follow) => (
+              <article key={follow}>
+                <div className="tiny-avatar">{follow.slice(0, 1)}</div>
+                <div>
+                  <strong>{follow}</strong>
+                  <span>优质技术资源分享</span>
+                </div>
+                <button type="button">关注</button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="glass-panel rail-card overview-card">
+          <header>
+            <h2>社区概览</h2>
+          </header>
           <div>
-            <strong>实时</strong>
-            <span>动态流</span>
+            <strong>2,342</strong>
+            <span>今日活跃用户</span>
           </div>
           <div>
-            <strong>异步</strong>
-            <span>通知</span>
-          </div>
-          <div>
-            <strong>缓存</strong>
-            <span>收件箱</span>
+            <strong>156</strong>
+            <span>今日新增动态</span>
           </div>
         </section>
       </aside>

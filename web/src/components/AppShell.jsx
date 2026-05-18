@@ -1,5 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Bell, Bookmark, Flame, Home, LogOut, PenLine, UserRound } from "lucide-react";
+import {
+  Bell,
+  Bookmark,
+  DraftingCompass,
+  Flame,
+  Home,
+  Rows3,
+  MoonStar,
+  Plus,
+  Search,
+  Settings2,
+  SunMedium,
+  UserRound
+} from "lucide-react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
@@ -7,10 +20,12 @@ import { Brand } from "./Brand";
 import { ComposerModal } from "./ComposerModal";
 
 export function AppShell() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const [composerOpen, setComposerOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [darkTheme, setDarkTheme] = useState(false);
+  const [richFeed, setRichFeed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -36,60 +51,109 @@ export function AppShell() {
   }, [location.pathname, user]);
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <Brand />
-        <nav className="main-nav" aria-label="主导航">
-          <NavLink to="/">
-            <Home size={17} />
-            最新
-          </NavLink>
-          <NavLink to="/hot">
-            <Flame size={17} />
-            热门
-          </NavLink>
-          {user ? (
-            <NavLink to="/following">
-              <UserRound size={17} />
-              关注
+    <div className={`app-shell ${darkTheme ? "theme-dark" : ""}`}>
+      <div className="ambient-overlay" />
+      <div className="desktop-shell">
+        <aside className="glass-panel sidebar">
+          <Brand />
+          <nav className="sidebar-nav" aria-label="主导航">
+            <NavLink to="/">
+              <Home size={18} />
+              首页
             </NavLink>
-          ) : null}
-        </nav>
-        <div className="top-actions">
-          {user ? (
-            <>
-              <button className="icon-command" onClick={() => setComposerOpen(true)} aria-label="发布动态">
-                <PenLine size={18} />
-              </button>
-              <NavLink className="icon-command" to="/favorites" aria-label="我的收藏">
-                <Bookmark size={18} />
+            <NavLink to="/hot">
+              <Flame size={18} />
+              热门
+            </NavLink>
+            {user ? (
+              <NavLink to="/following">
+                <UserRound size={18} />
+                关注
               </NavLink>
-              <NavLink className="icon-command badge-wrap" to="/notifications" aria-label="通知">
-                <Bell size={18} />
-                {unreadCount > 0 ? <span>{unreadCount}</span> : null}
+            ) : null}
+            <NavLink to="/favorites">
+              <Bookmark size={18} />
+              收藏
+            </NavLink>
+            <NavLink className="badge-nav" to="/notifications">
+              <Bell size={18} />
+              通知
+              {unreadCount > 0 ? <span>{unreadCount}</span> : null}
+            </NavLink>
+            {user ? (
+              <NavLink to={`/user/${user.id}`}>
+                <UserRound size={18} />
+                我的
               </NavLink>
-              <Link className="user-chip" to={`/user/${user.id}`}>
-                {user.nickname}
-              </Link>
-              <button className="icon-command" onClick={logout} aria-label="退出登录">
-                <LogOut size={18} />
-              </button>
-            </>
-          ) : (
-            <>
-              <Link className="text-link" to="/login">
-                登录
-              </Link>
-              <Link className="primary-button compact" to="/register">
-                注册
-              </Link>
-            </>
-          )}
+            ) : null}
+          </nav>
+
+          <section className="sidebar-profile">
+            {user ? (
+              <>
+                <div className="profile-avatar">{user.nickname.slice(0, 1)}</div>
+                <div>
+                  <strong>{user.nickname}</strong>
+                  <span>全栈开发工程师</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="profile-avatar">D</div>
+                <div>
+                  <strong>访客模式</strong>
+                  <span>登录后同步你的动态</span>
+                </div>
+              </>
+            )}
+          </section>
+
+          <div className="sidebar-links">
+            <button type="button">
+              <DraftingCompass size={17} />
+              草稿箱
+              <span>3</span>
+            </button>
+            <button type="button">
+              <Settings2 size={17} />
+              设置
+            </button>
+          </div>
+        </aside>
+
+        <div className="workspace">
+          <div className="floating-tools">
+            <label className="glass-pill search-pill">
+              <Search size={17} />
+              <input placeholder="搜索内容、标签或用户" />
+            </label>
+            <button className="glass-pill add-pill" type="button" onClick={() => setComposerOpen(true)} aria-label="创建动态">
+              <Plus size={20} />
+            </button>
+          </div>
+
+          <main className="page-shell">
+            <Outlet context={{ openComposer: () => setComposerOpen(true), richFeed }} />
+          </main>
         </div>
-      </header>
-      <main className="page-shell">
-        <Outlet context={{ openComposer: () => setComposerOpen(true) }} />
-      </main>
+
+        <div className="sidebar-utilities glass-pill" aria-label="快捷设置">
+          <button type="button" onClick={() => setDarkTheme((value) => !value)} aria-label="切换主题">
+            {darkTheme ? <MoonStar size={18} /> : <SunMedium size={18} />}
+          </button>
+          <button
+            type="button"
+            className={richFeed ? "active" : ""}
+            onClick={() => setRichFeed((value) => !value)}
+            aria-label="切换动态显示模式"
+          >
+            <Rows3 size={18} />
+          </button>
+          <button type="button" aria-label="快捷设置">
+            <Settings2 size={18} />
+          </button>
+        </div>
+      </div>
       {user ? <ComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} /> : null}
     </div>
   );

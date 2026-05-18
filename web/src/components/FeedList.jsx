@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { PostCard } from "./PostCard";
 
-export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText }) {
+export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich = false }) {
   const [state, setState] = useState({
     items: [],
     cursor: "",
@@ -62,7 +62,7 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText }) {
   return (
     <div className="feed-stack">
       {state.items.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} rich={rich} />
       ))}
       {state.hasMore ? (
         <button className="ghost-button load-more" onClick={loadMore}>

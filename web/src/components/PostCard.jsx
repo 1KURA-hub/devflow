@@ -5,7 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../state/auth";
 import { formatDate, splitTags } from "../utils/format";
 
-export function PostCard({ post, compact = false }) {
+export function PostCard({ post, compact = false, rich = false }) {
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
@@ -45,6 +45,7 @@ export function PostCard({ post, compact = false }) {
 
   return (
     <article className={`post-card ${compact ? "compact" : ""}`}>
+      {rich ? <div className="post-preview" aria-hidden="true" /> : null}
       <div className="post-meta">
         <Link to={`/user/${post.author_id}`}>作者 #{post.author_id}</Link>
         <time>{formatDate(post.created_at)}</time>
