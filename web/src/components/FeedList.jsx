@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { PostCard } from "./PostCard";
 
-export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich = false }) {
+export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich = false, query = "", activeTag = "" }) {
   const [state, setState] = useState({
     items: [],
     cursor: "",
@@ -35,6 +35,17 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich =
     };
   }, [loader, refreshKey]);
 
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedTag = activeTag.trim().toLowerCase();
+    return state.items.filter((post) => {
+      const text = `${post.title} ${post.content} ${post.tags}`.toLowerCase();
+      const tagMatched = !normalizedTag || post.tags.toLowerCase().split(",").map((tag) => tag.trim()).includes(normalizedTag);
+      const queryMatched = !normalizedQuery || text.includes(normalizedQuery);
+      return tagMatched && queryMatched;
+    });
+  }, [activeTag, query, state.items]);
+
   async function loadMore() {
     const result = await loader({ cursor: state.cursor });
     setState((current) => ({
@@ -51,17 +62,17 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich =
   if (state.error) {
     return <div className="surface state-box">{state.error}</div>;
   }
-  if (state.items.length === 0) {
+  if (state.items.length === 0 || filteredItems.length === 0) {
     return (
       <div className="surface empty-state">
-        <h3>{emptyTitle}</h3>
-        <p>{emptyText}</p>
+        <h3>{state.items.length === 0 ? emptyTitle : "没有匹配的动态"}</h3>
+        <p>{state.items.length === 0 ? emptyText : "换个关键词或标签试试，当前只筛选已经加载的动态。"}</p>
       </div>
     );
   }
   return (
     <div className="feed-stack">
-      {state.items.map((post) => (
+      {filteredItems.map((post) => (
         <PostCard key={post.id} post={post} rich={rich} />
       ))}
       {state.hasMore ? (

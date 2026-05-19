@@ -9,9 +9,10 @@ import {
   Settings,
   Star,
   SunMedium,
-  UserRound
+  UserRound,
+  X
 } from "lucide-react";
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
 import { Brand } from "./Brand";
@@ -20,7 +21,9 @@ import { ComposerModal } from "./ComposerModal";
 export function AppShell() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [composerOpen, setComposerOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [darkTheme, setDarkTheme] = useState(false);
   const [richFeed, setRichFeed] = useState(false);
@@ -81,6 +84,14 @@ export function AppShell() {
     };
   }, [user]);
 
+  function openComposer() {
+    if (user) {
+      setComposerOpen(true);
+      return;
+    }
+    navigate("/login");
+  }
+
   return (
     <div className={`app-shell ${darkTheme ? "theme-dark" : ""}`}>
       <div className="ambient-overlay" />
@@ -125,7 +136,7 @@ export function AppShell() {
                   <strong>{user.nickname}</strong>
                   <span>全栈开发工程师</span>
                 </div>
-                <button type="button" aria-label="设置">
+                <button type="button" onClick={() => setSettingsOpen(true)} aria-label="设置">
                   <Settings size={16} />
                 </button>
                 <div className="sidebar-profile-stats">
@@ -150,7 +161,7 @@ export function AppShell() {
                   <strong>访客模式</strong>
                   <span>登录后同步你的动态</span>
                 </div>
-                <button type="button" aria-label="设置">
+                <button type="button" onClick={() => setSettingsOpen(true)} aria-label="设置">
                   <Settings size={16} />
                 </button>
               </>
@@ -160,7 +171,7 @@ export function AppShell() {
 
         <div className="workspace">
           <main className="page-shell">
-            <Outlet context={{ openComposer: () => setComposerOpen(true), richFeed }} />
+            <Outlet context={{ openComposer, richFeed }} />
           </main>
         </div>
 
@@ -175,11 +186,38 @@ export function AppShell() {
           >
             {richFeed ? <Images size={18} /> : <Rows3 size={18} />}
           </button>
-          <button type="button" aria-label="快捷设置">
+          <button type="button" onClick={() => setSettingsOpen(true)} aria-label="快捷设置">
             <Settings size={18} />
           </button>
         </div>
       </div>
+      {settingsOpen ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="界面设置">
+          <section className="settings-modal">
+            <button className="icon-command modal-close" type="button" onClick={() => setSettingsOpen(false)} aria-label="关闭">
+              <X size={18} />
+            </button>
+            <div>
+              <p className="eyebrow">界面设置</p>
+              <h2>调整首页显示方式</h2>
+            </div>
+            <button className="setting-row" type="button" onClick={() => setDarkTheme((value) => !value)}>
+              <span>
+                <strong>主题模式</strong>
+                <em>{darkTheme ? "深色玻璃背景" : "浅色玻璃背景"}</em>
+              </span>
+              {darkTheme ? <Moon size={19} /> : <SunMedium size={19} />}
+            </button>
+            <button className="setting-row" type="button" onClick={() => setRichFeed((value) => !value)}>
+              <span>
+                <strong>动态显示</strong>
+                <em>{richFeed ? "图片卡片模式" : "紧凑列表模式"}</em>
+              </span>
+              {richFeed ? <Images size={19} /> : <Rows3 size={19} />}
+            </button>
+          </section>
+        </div>
+      ) : null}
       {user ? <ComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} /> : null}
     </div>
   );
