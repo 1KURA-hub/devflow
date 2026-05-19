@@ -137,6 +137,7 @@ button {
 }
 
 .sidebar {
+  grid-column: 1;
   position: fixed;
   top: var(--shell-pad);
   left: max(20px, calc((100vw - var(--shell-max)) / 2));
@@ -377,6 +378,7 @@ button {
 }
 
 .workspace {
+  grid-column: 2;
   min-width: 0;
   min-height: calc(100vh - 56px);
   padding-top: 0;
@@ -1809,6 +1811,7 @@ textarea:focus {
   }
 
   .workspace {
+    grid-column: auto;
     height: auto;
     min-height: auto;
     padding-top: 0;
