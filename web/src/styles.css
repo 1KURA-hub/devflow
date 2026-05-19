@@ -51,10 +51,11 @@ button {
 
 .app-shell {
   position: relative;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
-    linear-gradient(rgba(228, 240, 250, 0.14), rgba(228, 240, 250, 0.14)),
+    linear-gradient(rgba(228, 240, 250, 0.2), rgba(228, 240, 250, 0.2)),
     var(--custom-bg, url("./assets/devflow-wallpaper.jpg")) center / cover fixed;
 }
 
@@ -70,18 +71,18 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
-  height: 100vh;
+  min-height: 100vh;
   grid-template-columns: 268px minmax(0, 1fr);
   gap: 28px;
   padding: 28px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .glass-panel,
 .surface {
   animation: glass-rise 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   border: 1px solid var(--line);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(239, 247, 255, 0.88));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(239, 247, 255, 0.94));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.96),
     var(--shadow);
@@ -92,7 +93,7 @@ button {
 .glass-pill {
   animation: glass-pop 480ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   border: 1px solid var(--line);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(239, 247, 255, 0.78));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(239, 247, 255, 0.88));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.92),
     var(--shadow);
@@ -130,7 +131,7 @@ button {
   align-self: start;
   gap: 24px;
   min-height: 0;
-  height: calc(100vh - 130px);
+  height: calc(100vh - 156px);
   padding: 26px 20px 24px;
   border-radius: var(--radius-xl);
 }
@@ -223,7 +224,7 @@ button {
   margin-top: auto;
   padding: 18px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     0 12px 26px rgba(29, 55, 90, 0.08);
@@ -236,7 +237,7 @@ button {
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.74);
   color: rgba(22, 35, 61, 0.72);
   transition: transform 180ms ease, background 180ms ease;
 }
@@ -330,7 +331,7 @@ button {
   padding: 10px 6px;
   border: 0;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.86);
   color: var(--muted);
   text-align: center;
   font-size: 12px;
@@ -350,8 +351,7 @@ button {
 
 .workspace {
   min-width: 0;
-  height: calc(100vh - 56px);
-  min-height: 0;
+  min-height: calc(100vh - 56px);
   padding-top: 0;
 }
 
@@ -363,7 +363,7 @@ button {
   height: 44px;
   padding: 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.82);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(237, 245, 252, 0.68));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(237, 245, 252, 0.78));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
     0 12px 28px rgba(29, 55, 90, 0.12);
@@ -400,7 +400,7 @@ button {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 18px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(237, 245, 252, 0.68));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(237, 245, 252, 0.78));
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -417,12 +417,11 @@ button {
 
 .page-shell {
   width: min(1270px, 100%);
-  height: 100%;
+  min-height: calc(100vh - 56px);
 }
 
 .dashboard-layout {
   display: grid;
-  height: 100%;
   min-height: 0;
   grid-template-columns: minmax(610px, 830px) minmax(280px, 360px);
   justify-content: space-between;
@@ -440,7 +439,6 @@ button {
 
 .feed-frame {
   display: grid;
-  height: 100%;
   min-height: 0;
   border-radius: var(--radius-xl);
   padding: 14px;
@@ -449,15 +447,13 @@ button {
 
 .feed-column {
   min-height: 0;
-  overflow-y: auto;
-  padding-right: 8px;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .inset-panel {
   border: 1px solid rgba(255, 255, 255, 0.82);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(24px) saturate(145%);
   -webkit-backdrop-filter: blur(24px) saturate(145%);
@@ -617,7 +613,7 @@ button {
   gap: 10px;
   padding: 16px 18px;
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(238, 246, 255, 0.86));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.94));
   border: 1px solid var(--line);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -747,13 +743,14 @@ button {
 }
 
 .dashboard-rail {
-  position: relative;
+  position: sticky;
+  top: 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   height: calc(100vh - 56px);
   min-height: 0;
-  max-height: none;
+  max-height: calc(100vh - 56px);
   overflow: hidden;
 }
 
@@ -902,17 +899,17 @@ button {
 
 .sidebar-utilities {
   position: fixed;
-  bottom: 28px;
-  left: 55px;
+  bottom: 30px;
+  left: 41px;
   z-index: 10;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 214px;
+  width: 238px;
   min-height: 58px;
   justify-content: space-between;
   padding: 6px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(236, 245, 252, 0.86));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(236, 245, 252, 0.9));
 }
 
 .sidebar-utilities button {
@@ -1356,22 +1353,23 @@ textarea:focus {
 }
 
 .theme-dark {
-  --ink: #f4f7fb;
-  --muted: rgba(244, 247, 251, 0.64);
+  --ink: #f8fafc;
+  --muted: rgba(248, 250, 252, 0.82);
   --accent: #7aa4ff;
   --line: rgba(255, 255, 255, 0.22);
   --line-soft: rgba(255, 255, 255, 0.14);
-  --glass: rgba(11, 17, 28, 0.82);
-  --glass-strong: rgba(15, 23, 36, 0.9);
-  --glass-muted: rgba(24, 34, 50, 0.72);
+  --glass: rgba(11, 17, 28, 0.94);
+  --glass-strong: rgba(15, 23, 36, 0.96);
+  --glass-muted: rgba(24, 34, 50, 0.9);
   --shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
   --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.28);
+  color: var(--ink);
   color-scheme: dark;
 }
 
 .theme-dark .ambient-overlay {
   background:
-    linear-gradient(180deg, rgba(3, 8, 15, 0.34), rgba(3, 8, 15, 0.48)),
+    linear-gradient(180deg, rgba(3, 8, 15, 0.46), rgba(3, 8, 15, 0.58)),
     radial-gradient(circle at top left, rgba(112, 154, 255, 0.18), transparent 34%);
 }
 
@@ -1380,7 +1378,7 @@ textarea:focus {
 .theme-dark .settings-modal,
 .theme-dark .composer-modal {
   border-color: rgba(255, 255, 255, 0.18);
-  background: linear-gradient(145deg, rgba(15, 23, 36, 0.88), rgba(8, 13, 22, 0.76));
+  background: linear-gradient(145deg, rgba(15, 23, 36, 0.96), rgba(8, 13, 22, 0.9));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     var(--shadow);
@@ -1396,19 +1394,60 @@ textarea:focus {
 .theme-dark .add-pill,
 .theme-dark .sidebar-utilities {
   border-color: rgba(255, 255, 255, 0.16);
-  background: linear-gradient(145deg, rgba(20, 30, 46, 0.78), rgba(8, 13, 22, 0.66));
+  background: linear-gradient(145deg, rgba(20, 30, 46, 0.94), rgba(8, 13, 22, 0.86));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     var(--shadow-soft);
 }
 
-.theme-dark .sidebar-nav a,
 .theme-dark .composer-strip div,
+.theme-dark .composer-prompt,
 .theme-dark .post-copy,
+.theme-dark .post-meta,
+.theme-dark .post-actions,
 .theme-dark .tag-row span,
 .theme-dark .topic-grid button,
-.theme-dark .filter-panel button {
-  color: rgba(244, 247, 251, 0.74);
+.theme-dark .filter-panel button,
+.theme-dark .rail-card header button,
+.theme-dark .user-summary dt,
+.theme-dark .overview-card span,
+.theme-dark .sidebar-profile span,
+.theme-dark .user-summary span,
+.theme-dark .follow-list span,
+.theme-dark .profile-stats button,
+.theme-dark .notification-list article.read,
+.theme-dark .muted-copy,
+.theme-dark label,
+.theme-dark .setting-row em,
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder {
+  color: var(--muted);
+}
+
+.theme-dark .sidebar-nav a {
+  color: var(--ink);
+}
+
+.theme-dark .brand-word,
+.theme-dark .sidebar-profile strong,
+.theme-dark .sidebar-profile-stats strong,
+.theme-dark .user-summary strong,
+.theme-dark .user-summary dd,
+.theme-dark .user-summary dd a,
+.theme-dark .rail-card h2,
+.theme-dark .follow-list strong,
+.theme-dark .overview-card strong,
+.theme-dark .post-author span,
+.theme-dark .post-title,
+.theme-dark .profile-header h1,
+.theme-dark .profile-header p,
+.theme-dark .profile-stats strong,
+.theme-dark .section-heading h1,
+.theme-dark .auth-story h1,
+.theme-dark .settings-modal h2,
+.theme-dark .setting-row strong,
+.theme-dark .user-list-item strong {
+  color: var(--ink);
 }
 
 .theme-dark .sidebar-nav a.active,
@@ -1430,8 +1469,30 @@ textarea:focus {
 .theme-dark textarea,
 .theme-dark .icon-command {
   border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.12);
   color: var(--ink);
+}
+
+.theme-dark .sidebar-profile button,
+.theme-dark .sidebar-utilities button,
+.theme-dark .composer-strip div button,
+.theme-dark .feed-toolbar button,
+.theme-dark .post-actions button,
+.theme-dark .post-actions a,
+.theme-dark .ghost-button,
+.theme-dark .search-pill input,
+.theme-dark .search-pill svg,
+.theme-dark .add-pill,
+.theme-dark .add-pill svg {
+  color: var(--ink);
+}
+
+.theme-dark .inset-panel {
+  background: rgba(16, 24, 38, 0.9);
+}
+
+.theme-dark .post-card:hover {
+  background: linear-gradient(145deg, rgba(22, 33, 50, 0.98), rgba(9, 14, 24, 0.92));
 }
 
 .theme-dark .profile-avatar,
@@ -1439,7 +1500,7 @@ textarea:focus {
 .theme-dark .tiny-avatar,
 .theme-dark .avatar {
   background: rgba(122, 164, 255, 0.16);
-  color: rgba(244, 247, 251, 0.88);
+  color: var(--ink);
 }
 
 .theme-dark .brand-mark {
