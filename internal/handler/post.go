@@ -141,7 +141,7 @@ func (a *App) deletePost(c *gin.Context) {
 		writePostError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"deleted": true})
+	response.OK(c, nil)
 }
 
 func (a *App) writePostList(c *gin.Context, result *service.PostListResult) {

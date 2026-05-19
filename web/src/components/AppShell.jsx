@@ -6,6 +6,7 @@ import {
   Images,
   Rows3,
   Moon,
+  Plus,
   RotateCcw,
   Settings,
   Star,
@@ -25,18 +26,6 @@ const backgroundDBName = "devflow_ui";
 const backgroundStoreName = "preferences";
 const backgroundRecordKey = "background_image";
 const maxBackgroundSize = 8 * 1024 * 1024;
-const canvasWidth = 1440;
-const canvasHeight = 860;
-const canvasMargin = 28;
-
-function calculateCanvasScale() {
-  if (typeof window === "undefined") {
-    return 1;
-  }
-  const widthScale = (window.innerWidth - canvasMargin * 2) / canvasWidth;
-  const heightScale = (window.innerHeight - canvasMargin * 2) / canvasHeight;
-  return Math.min(1, Math.max(0.38, Math.min(widthScale, heightScale)));
-}
 
 function openBackgroundDB() {
   return new Promise((resolve, reject) => {
@@ -92,14 +81,12 @@ export function AppShell() {
   const [richFeed, setRichFeed] = useState(false);
   const [profileBioDraft, setProfileBioDraft] = useState("");
   const [profileStats, setProfileStats] = useState({ posts: 0, following: 0, followers: 0 });
-  const [canvasScale, setCanvasScale] = useState(calculateCanvasScale);
-
-  useEffect(() => {
-    const resize = () => setCanvasScale(calculateCanvasScale());
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
+  const isFeedRoute = location.pathname === "/" || location.pathname === "/hot" || location.pathname === "/following";
+  const isMobileMeRoute =
+    location.pathname === "/me" ||
+    location.pathname.startsWith("/user/") ||
+    location.pathname === "/favorites" ||
+    location.pathname === "/notifications";
 
   useEffect(() => {
     let active = true;
@@ -319,7 +306,6 @@ export function AppShell() {
     <div
       className={`app-shell ${darkTheme ? "theme-dark" : ""}`}
       style={{
-        "--app-scale": canvasScale,
         ...(backgroundImage ? { "--custom-bg": `url(${backgroundImage})` } : {})
       }}
     >
@@ -396,29 +382,59 @@ export function AppShell() {
               </>
             )}
           </section>
+
+          <div className="sidebar-utilities glass-pill" aria-label="快捷设置">
+            <button type="button" onClick={() => setDarkTheme((value) => !value)} aria-label="切换主题">
+              {darkTheme ? <Moon size={18} /> : <SunMedium size={18} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setRichFeed((value) => !value)}
+              aria-label="切换动态显示模式"
+            >
+              {richFeed ? <Images size={18} /> : <Rows3 size={18} />}
+            </button>
+            <button type="button" onClick={() => setSettingsOpen(true)} aria-label="快捷设置">
+              <Settings size={18} />
+            </button>
+          </div>
         </aside>
 
         <div className="workspace">
           <main className="page-shell">
-            <Outlet context={{ openComposer, richFeed, profileStats, adjustProfileStats }} />
+            <Outlet
+              context={{
+                openComposer,
+                openSettings: () => setSettingsOpen(true),
+                richFeed,
+                profileStats,
+                adjustProfileStats
+              }}
+            />
           </main>
         </div>
 
-        <div className="sidebar-utilities glass-pill" aria-label="快捷设置">
-          <button type="button" onClick={() => setDarkTheme((value) => !value)} aria-label="切换主题">
-            {darkTheme ? <Moon size={18} /> : <SunMedium size={18} />}
+        <nav className="mobile-bottom-nav" aria-label="移动端主导航">
+          <NavLink to="/" end className={isFeedRoute ? "active" : ""}>
+            <Home size={20} />
+            <span>动态</span>
+          </NavLink>
+          <button className="mobile-publish-button" type="button" onClick={openComposer} aria-label="发布动态">
+            <Plus size={28} strokeWidth={2.5} />
           </button>
           <button
             type="button"
-            onClick={() => setRichFeed((value) => !value)}
-            aria-label="切换动态显示模式"
+            className={isMobileMeRoute ? "active" : ""}
+            onClick={() => navigate("/me")}
+            aria-label="我的"
           >
-            {richFeed ? <Images size={18} /> : <Rows3 size={18} />}
+            <span className="mobile-nav-icon-wrap">
+              <UserRound size={20} />
+              {unreadCount > 0 ? <em>{unreadCount > 99 ? "99+" : unreadCount}</em> : null}
+            </span>
+            <span>我的</span>
           </button>
-          <button type="button" onClick={() => setSettingsOpen(true)} aria-label="快捷设置">
-            <Settings size={18} />
-          </button>
-        </div>
+        </nav>
       </div>
       {settingsOpen ? (
         <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="界面设置" onClick={() => setSettingsOpen(false)}>

@@ -73,6 +73,7 @@ export const api = {
   userPosts: (id, params) => request(`/api/users/${id}/posts${query(params)}`),
   followers: (id, params) => request(`/api/users/${id}/followers${query(params)}`),
   followingUsers: (id, params) => request(`/api/users/${id}/following${query(params)}`),
+  followState: (id) => request(`/api/users/${id}/follow-state`),
   follow: (id) => request(`/api/users/${id}/follow`, { method: "POST" }),
   unfollow: (id) => request(`/api/users/${id}/follow`, { method: "DELETE" }),
   like: (id) => request(`/api/posts/${id}/like`, { method: "POST" }),

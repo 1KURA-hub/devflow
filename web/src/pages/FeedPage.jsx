@@ -20,6 +20,60 @@ const feedTabs = [
   { to: "/hot", label: "热门" },
   { to: "/following", label: "关注" }
 ];
+const mobileFeedTabs = [
+  { to: "/following", label: "关注" },
+  { to: "/hot", label: "热门" },
+  { to: "/", label: "最新", end: true }
+];
+const demoAuthors = [
+  { id: 901, nickname: "刘超", bio: "后端架构与性能优化" },
+  { id: 902, nickname: "Yu", bio: "Go / Redis / 微服务" },
+  { id: 903, nickname: "Chen", bio: "云原生和工程效率" }
+];
+const demoFeedPosts = [
+  {
+    id: "demo-feed-1",
+    author_id: demoAuthors[0].id,
+    author: demoAuthors[0],
+    title: "把点赞链路改回清晰写法",
+    content: "先让接口行为稳定，再考虑性能细节。唯一索引兜底，服务层只关心是否真的创建或删除关系。",
+    tags: "Go,GORM,并发编程",
+    like_count: 18,
+    favorite_count: 6,
+    comment_count: 4,
+    liked: false,
+    favorited: false,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: "demo-feed-2",
+    author_id: demoAuthors[1].id,
+    author: demoAuthors[1],
+    title: "移动端首页改成动态优先",
+    content: "顶部频道只保留关注、热门、最新，底部只放动态、发布和我的。信息密度要够，但按钮不能挤。",
+    tags: "React,UI,DevOps",
+    like_count: 12,
+    favorite_count: 5,
+    comment_count: 2,
+    liked: true,
+    favorited: false,
+    created_at: new Date(Date.now() - 48 * 60 * 1000).toISOString()
+  },
+  {
+    id: "demo-feed-3",
+    author_id: demoAuthors[2].id,
+    author: demoAuthors[2],
+    title: "通知页要能说明谁做了什么",
+    content: "点赞、收藏、评论跳动态详情，关注跳用户主页。列表里直接展示 actor 和 post，比固定文案清楚很多。",
+    tags: "产品设计,React",
+    like_count: 9,
+    favorite_count: 4,
+    comment_count: 1,
+    liked: false,
+    favorited: true,
+    created_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString()
+  }
+];
 
 export function FeedPage({ mode }) {
   const { user } = useAuth();
@@ -28,6 +82,7 @@ export function FeedPage({ mode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTag, setActiveTag] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [followPage, setFollowPage] = useState(0);
   const [followed, setFollowed] = useState({});
@@ -86,6 +141,36 @@ export function FeedPage({ mode }) {
     <div className="dashboard-layout">
       <section className="glass-panel feed-frame">
         <div className="feed-column">
+          <header className="mobile-feed-header">
+            <div className="mobile-page-topbar">
+              <div>
+                <span className="mobile-brand-mark">D</span>
+                <strong>DevFlow</strong>
+              </div>
+              <button type="button" onClick={() => setMobileSearchOpen((value) => !value)} aria-label="搜索">
+                <Search size={20} />
+              </button>
+            </div>
+            <nav aria-label="移动端动态频道">
+              {mobileFeedTabs.map((tab) => (
+                <NavLink key={tab.to} to={tab.to} end={tab.end} className={({ isActive }) => (isActive ? "active" : "")}>
+                  {tab.label}
+                </NavLink>
+              ))}
+            </nav>
+          </header>
+
+          {mobileSearchOpen ? (
+            <label className="mobile-search-panel inset-panel">
+              <Search size={17} />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="搜索内容、标签或用户"
+              />
+            </label>
+          ) : null}
+
           <div className="composer-strip inset-panel">
             <Avatar user={user} label="D" className="mini-avatar" />
             <button className="composer-prompt" type="button" onClick={openComposer}>
@@ -151,6 +236,7 @@ export function FeedPage({ mode }) {
             rich={richFeed}
             query={searchQuery}
             activeTag={activeTag}
+            fallbackItems={demoFeedPosts}
           />
         </div>
       </section>
@@ -245,29 +331,29 @@ export function FeedPage({ mode }) {
               ))}
             </div>
           </section>
-        </div>
 
-        <section className="glass-panel rail-card overview-card">
-          <header>
-            <h2>社区概览</h2>
-          </header>
-          <div>
-            <strong>{overview.total_users}</strong>
-            <span>社区用户</span>
-          </div>
-          <div>
-            <strong>{overview.today_posts}</strong>
-            <span>今日新增动态</span>
-          </div>
-          <div>
-            <strong>{overview.total_posts}</strong>
-            <span>动态总数</span>
-          </div>
-          <div>
-            <strong>{overview.today_users}</strong>
-            <span>今日新用户</span>
-          </div>
-        </section>
+          <section className="glass-panel rail-card overview-card">
+            <header>
+              <h2>社区概览</h2>
+            </header>
+            <div>
+              <strong>{overview.total_users}</strong>
+              <span>社区用户</span>
+            </div>
+            <div>
+              <strong>{overview.today_posts}</strong>
+              <span>今日新增动态</span>
+            </div>
+            <div>
+              <strong>{overview.total_posts}</strong>
+              <span>动态总数</span>
+            </div>
+            <div>
+              <strong>{overview.today_users}</strong>
+              <span>今日新用户</span>
+            </div>
+          </section>
+        </div>
       </aside>
     </div>
   );

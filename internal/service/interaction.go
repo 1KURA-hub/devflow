@@ -25,26 +25,26 @@ func NewInteractionService(interactions *repository.InteractionRepository, posts
 	}
 }
 
-func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) (bool, error) {
+func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) error {
 	if userID == 0 || postID == 0 {
-		return false, ErrInvalidInput
+		return ErrInvalidInput
 	}
 	if _, err := s.users.FindByID(ctx, userID); err != nil {
-		return false, err
+		return err
 	}
 	post, err := s.posts.FindByID(ctx, postID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	changed, err := s.interactions.AddLike(ctx, userID, postID)
-	if err != nil || !changed {
-		return changed, err
+	created, err := s.interactions.AddLike(ctx, userID, postID)
+	if err != nil || !created {
+		return err
 	}
 	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount+1, post.FavoriteCount, post.CommentCount))
 	if s.notifications == nil {
-		return changed, nil
+		return nil
 	}
-	return changed, s.notifications.Create(ctx, CreateNotificationInput{
+	return s.notifications.Create(ctx, CreateNotificationInput{
 		UserID:  post.AuthorID,
 		ActorID: userID,
 		Type:    NotificationLike,
@@ -53,42 +53,42 @@ func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) (b
 	})
 }
 
-func (s *InteractionService) Unlike(ctx context.Context, userID, postID uint64) (bool, error) {
+func (s *InteractionService) Unlike(ctx context.Context, userID, postID uint64) error {
 	if userID == 0 || postID == 0 {
-		return false, ErrInvalidInput
+		return ErrInvalidInput
 	}
 	post, err := s.posts.FindByID(ctx, postID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	changed, err := s.interactions.RemoveLike(ctx, userID, postID)
-	if err != nil || !changed {
-		return changed, err
+	deleted, err := s.interactions.RemoveLike(ctx, userID, postID)
+	if err != nil || !deleted {
+		return err
 	}
 	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount-1, post.FavoriteCount, post.CommentCount))
-	return changed, nil
+	return nil
 }
 
-func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64) (bool, error) {
+func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64) error {
 	if userID == 0 || postID == 0 {
-		return false, ErrInvalidInput
+		return ErrInvalidInput
 	}
 	if _, err := s.users.FindByID(ctx, userID); err != nil {
-		return false, err
+		return err
 	}
 	post, err := s.posts.FindByID(ctx, postID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	changed, err := s.interactions.AddFavorite(ctx, userID, postID)
-	if err != nil || !changed {
-		return changed, err
+	created, err := s.interactions.AddFavorite(ctx, userID, postID)
+	if err != nil || !created {
+		return err
 	}
 	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount+1, post.CommentCount))
 	if s.notifications == nil {
-		return changed, nil
+		return nil
 	}
-	return changed, s.notifications.Create(ctx, CreateNotificationInput{
+	return s.notifications.Create(ctx, CreateNotificationInput{
 		UserID:  post.AuthorID,
 		ActorID: userID,
 		Type:    NotificationFavorite,
@@ -97,20 +97,20 @@ func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64
 	})
 }
 
-func (s *InteractionService) Unfavorite(ctx context.Context, userID, postID uint64) (bool, error) {
+func (s *InteractionService) Unfavorite(ctx context.Context, userID, postID uint64) error {
 	if userID == 0 || postID == 0 {
-		return false, ErrInvalidInput
+		return ErrInvalidInput
 	}
 	post, err := s.posts.FindByID(ctx, postID)
 	if err != nil {
-		return false, err
+		return err
 	}
-	changed, err := s.interactions.RemoveFavorite(ctx, userID, postID)
-	if err != nil || !changed {
-		return changed, err
+	deleted, err := s.interactions.RemoveFavorite(ctx, userID, postID)
+	if err != nil || !deleted {
+		return err
 	}
 	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount-1, post.CommentCount))
-	return changed, nil
+	return nil
 }
 
 func (s *InteractionService) ListMyFavorites(ctx context.Context, userID uint64, input ListInput) (*PostListResult, error) {

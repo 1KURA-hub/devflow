@@ -40,6 +40,7 @@ func NewRouter(app *App) *gin.Engine {
 			authenticated.POST("/uploads/image", app.uploadImage)
 			authenticated.POST("/posts", app.createPost)
 			authenticated.DELETE("/posts/:id", app.deletePost)
+			authenticated.GET("/users/:id/follow-state", app.getFollowState)
 			authenticated.POST("/users/:id/follow", app.followUser)
 			authenticated.DELETE("/users/:id/follow", app.unfollowUser)
 			authenticated.GET("/feed/following", app.listFollowingFeed)

@@ -50,17 +50,8 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 	if _, err := s.users.FindByID(ctx, followeeID); err != nil {
 		return err
 	}
-	exists, err := s.follows.Exists(ctx, followerID, followeeID)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-	if err := s.follows.Create(ctx, &model.Follow{
-		FollowerID: followerID,
-		FolloweeID: followeeID,
-	}); err != nil {
+	created, err := s.follows.Add(ctx, followerID, followeeID)
+	if err != nil || !created {
 		return err
 	}
 	_ = s.relations.AddFollow(ctx, followerID, followeeID)
@@ -83,15 +74,26 @@ func (s *FollowService) Unfollow(ctx context.Context, followerID, followeeID uin
 	if followerID == followeeID {
 		return ErrCannotFollowSelf
 	}
-	if err := s.follows.Delete(ctx, followerID, followeeID); err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return nil
-		}
+	deleted, err := s.follows.Remove(ctx, followerID, followeeID)
+	if err != nil || !deleted {
 		return err
 	}
 	_ = s.relations.RemoveFollow(ctx, followerID, followeeID)
 	_ = s.inboxes.Delete(ctx, followerID)
 	return nil
+}
+
+func (s *FollowService) IsFollowing(ctx context.Context, followerID, followeeID uint64) (bool, error) {
+	if followerID == 0 || followeeID == 0 {
+		return false, ErrInvalidInput
+	}
+	if followerID == followeeID {
+		return false, nil
+	}
+	if _, err := s.users.FindByID(ctx, followeeID); err != nil {
+		return false, err
+	}
+	return s.follows.Exists(ctx, followerID, followeeID)
 }
 
 func (s *FollowService) ListFollowingUsers(ctx context.Context, userID uint64, input UserListInput) (*UserListResult, error) {

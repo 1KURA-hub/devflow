@@ -7,6 +7,7 @@ import (
 	"devflow/internal/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type FollowRepository struct {
@@ -17,21 +18,24 @@ func NewFollowRepository(db *gorm.DB) *FollowRepository {
 	return &FollowRepository{db: db}
 }
 
-func (r *FollowRepository) Create(ctx context.Context, follow *model.Follow) error {
-	return r.db.WithContext(ctx).Create(follow).Error
+func (r *FollowRepository) Add(ctx context.Context, followerID, followeeID uint64) (bool, error) {
+	result := r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&model.Follow{FollowerID: followerID, FolloweeID: followeeID})
+	if result.Error != nil {
+		return false, result.Error
+	}
+	return result.RowsAffected > 0, nil
 }
 
-func (r *FollowRepository) Delete(ctx context.Context, followerID, followeeID uint64) error {
+func (r *FollowRepository) Remove(ctx context.Context, followerID, followeeID uint64) (bool, error) {
 	result := r.db.WithContext(ctx).
 		Where("follower_id = ? AND followee_id = ?", followerID, followeeID).
 		Delete(&model.Follow{})
 	if result.Error != nil {
-		return result.Error
+		return false, result.Error
 	}
-	if result.RowsAffected == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return result.RowsAffected > 0, nil
 }
 
 func (r *FollowRepository) Exists(ctx context.Context, followerID, followeeID uint64) (bool, error) {

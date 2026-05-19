@@ -2,11 +2,11 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"devflow/internal/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type InteractionRepository struct {
@@ -20,23 +20,20 @@ func NewInteractionRepository(db *gorm.DB) *InteractionRepository {
 func (r *InteractionRepository) AddLike(ctx context.Context, userID, postID uint64) (bool, error) {
 	created := false
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var like model.Like
-		err := tx.Where("user_id = ? AND post_id = ?", userID, postID).First(&like).Error
-		if err == nil {
+		result := tx.Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&model.Like{UserID: userID, PostID: postID})
+		if result.Error != nil {
+			return result.Error
+		}
+		created = result.RowsAffected > 0
+		if !created {
 			return nil
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if err := tx.Create(&model.Like{UserID: userID, PostID: postID}).Error; err != nil {
-			return err
 		}
 		if err := tx.Model(&model.Post{}).
 			Where("id = ? AND status = ?", postID, 1).
 			UpdateColumn("like_count", gorm.Expr("like_count + ?", 1)).Error; err != nil {
 			return err
 		}
-		created = true
 		return nil
 	})
 	return created, err
@@ -66,23 +63,20 @@ func (r *InteractionRepository) RemoveLike(ctx context.Context, userID, postID u
 func (r *InteractionRepository) AddFavorite(ctx context.Context, userID, postID uint64) (bool, error) {
 	created := false
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var favorite model.Favorite
-		err := tx.Where("user_id = ? AND post_id = ?", userID, postID).First(&favorite).Error
-		if err == nil {
+		result := tx.Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&model.Favorite{UserID: userID, PostID: postID})
+		if result.Error != nil {
+			return result.Error
+		}
+		created = result.RowsAffected > 0
+		if !created {
 			return nil
-		}
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if err := tx.Create(&model.Favorite{UserID: userID, PostID: postID}).Error; err != nil {
-			return err
 		}
 		if err := tx.Model(&model.Post{}).
 			Where("id = ? AND status = ?", postID, 1).
 			UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", 1)).Error; err != nil {
 			return err
 		}
-		created = true
 		return nil
 	})
 	return created, err

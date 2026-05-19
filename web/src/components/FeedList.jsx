@@ -1,7 +1,16 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { PostCard } from "./PostCard";
 
-export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich = false, query = "", activeTag = "" }) {
+export function FeedList({
+  loader,
+  refreshKey = 0,
+  emptyTitle,
+  emptyText,
+  rich = false,
+  query = "",
+  activeTag = "",
+  fallbackItems = []
+}) {
   const [state, setState] = useState({
     items: [],
     cursor: "",
@@ -35,16 +44,17 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich =
     };
   }, [loader, refreshKey]);
 
+  const visibleItems = state.error || state.items.length === 0 ? fallbackItems : state.items;
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const normalizedTag = activeTag.trim().toLowerCase();
-    return state.items.filter((post) => {
+    return visibleItems.filter((post) => {
       const text = `${post.title} ${post.content} ${post.tags}`.toLowerCase();
       const tagMatched = !normalizedTag || post.tags.toLowerCase().split(",").map((tag) => tag.trim()).includes(normalizedTag);
       const queryMatched = !normalizedQuery || text.includes(normalizedQuery);
       return tagMatched && queryMatched;
     });
-  }, [activeTag, query, state.items]);
+  }, [activeTag, query, visibleItems]);
 
   async function loadMore() {
     const result = await loader({ cursor: state.cursor });
@@ -66,14 +76,14 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich =
   if (state.loading) {
     return <div className="surface state-box">正在载入动态...</div>;
   }
-  if (state.error) {
+  if (state.error && fallbackItems.length === 0) {
     return <div className="surface state-box">{state.error}</div>;
   }
-  if (state.items.length === 0 || filteredItems.length === 0) {
+  if (visibleItems.length === 0 || filteredItems.length === 0) {
     return (
       <div className="surface empty-state">
-        <h3>{state.items.length === 0 ? emptyTitle : "没有匹配的动态"}</h3>
-        <p>{state.items.length === 0 ? emptyText : "换个关键词或标签试试，当前只筛选已经加载的动态。"}</p>
+        <h3>{visibleItems.length === 0 ? emptyTitle : "没有匹配的动态"}</h3>
+        <p>{visibleItems.length === 0 ? emptyText : "换个关键词或标签试试，当前只筛选已经加载的动态。"}</p>
       </div>
     );
   }

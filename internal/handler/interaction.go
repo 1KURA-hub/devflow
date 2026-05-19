@@ -17,12 +17,11 @@ func (a *App) likePost(c *gin.Context) {
 	if !ok {
 		return
 	}
-	changed, err := a.interactionService.Like(c.Request.Context(), userID, postID)
-	if err != nil {
+	if err := a.interactionService.Like(c.Request.Context(), userID, postID); err != nil {
 		writeInteractionError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"liked": true, "changed": changed})
+	response.OK(c, nil)
 }
 
 func (a *App) unlikePost(c *gin.Context) {
@@ -30,12 +29,11 @@ func (a *App) unlikePost(c *gin.Context) {
 	if !ok {
 		return
 	}
-	changed, err := a.interactionService.Unlike(c.Request.Context(), userID, postID)
-	if err != nil {
+	if err := a.interactionService.Unlike(c.Request.Context(), userID, postID); err != nil {
 		writeInteractionError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"liked": false, "changed": changed})
+	response.OK(c, nil)
 }
 
 func (a *App) favoritePost(c *gin.Context) {
@@ -43,12 +41,11 @@ func (a *App) favoritePost(c *gin.Context) {
 	if !ok {
 		return
 	}
-	changed, err := a.interactionService.Favorite(c.Request.Context(), userID, postID)
-	if err != nil {
+	if err := a.interactionService.Favorite(c.Request.Context(), userID, postID); err != nil {
 		writeInteractionError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"favorited": true, "changed": changed})
+	response.OK(c, nil)
 }
 
 func (a *App) unfavoritePost(c *gin.Context) {
@@ -56,12 +53,11 @@ func (a *App) unfavoritePost(c *gin.Context) {
 	if !ok {
 		return
 	}
-	changed, err := a.interactionService.Unfavorite(c.Request.Context(), userID, postID)
-	if err != nil {
+	if err := a.interactionService.Unfavorite(c.Request.Context(), userID, postID); err != nil {
 		writeInteractionError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"favorited": false, "changed": changed})
+	response.OK(c, nil)
 }
 
 func (a *App) listMyFavorites(c *gin.Context) {

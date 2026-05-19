@@ -63,7 +63,7 @@ func (a *App) markNotificationRead(c *gin.Context) {
 		writeNotificationError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"read": true})
+	response.OK(c, nil)
 }
 
 func (a *App) markAllNotificationsRead(c *gin.Context) {
@@ -76,7 +76,7 @@ func (a *App) markAllNotificationsRead(c *gin.Context) {
 		writeNotificationError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"read_all": true})
+	response.OK(c, nil)
 }
 
 func writeNotificationError(c *gin.Context, err error) {

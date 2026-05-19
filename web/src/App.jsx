@@ -5,6 +5,7 @@ import { RequireAuth } from "./components/RequireAuth";
 import { AuthPage } from "./pages/AuthPage";
 import { FavoritesPage } from "./pages/FavoritesPage";
 import { FeedPage } from "./pages/FeedPage";
+import { MobileMePage } from "./pages/MobileMePage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { PostDetailPage } from "./pages/PostDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -26,6 +27,7 @@ export default function App() {
           }
         />
         <Route path="/post/:id" element={<PostDetailPage />} />
+        <Route path="/me" element={<MobileMePage />} />
         <Route path="/user/:id" element={<ProfilePage />} />
         <Route
           path="/favorites"

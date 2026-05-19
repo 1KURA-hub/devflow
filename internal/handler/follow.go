@@ -29,7 +29,7 @@ func (a *App) followUser(c *gin.Context) {
 		writeFollowError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"followed": true})
+	response.OK(c, nil)
 }
 
 func (a *App) unfollowUser(c *gin.Context) {
@@ -48,7 +48,27 @@ func (a *App) unfollowUser(c *gin.Context) {
 		writeFollowError(c, err)
 		return
 	}
-	response.OK(c, gin.H{"followed": false})
+	response.OK(c, nil)
+}
+
+func (a *App) getFollowState(c *gin.Context) {
+	currentUserID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	targetUserID, err := parseUint64Param(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	followed, err := a.followService.IsFollowing(c.Request.Context(), currentUserID, targetUserID)
+	if err != nil {
+		writeFollowError(c, err)
+		return
+	}
+	response.OK(c, gin.H{"followed": followed})
 }
 
 func (a *App) listFollowingUsers(c *gin.Context) {
