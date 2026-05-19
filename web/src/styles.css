@@ -146,37 +146,45 @@ button {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .brand-mark {
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   place-items: center;
   border-radius: 11px;
-  background: linear-gradient(145deg, rgba(74, 132, 255, 0.94), rgba(42, 95, 229, 0.88));
+  background: transparent;
   color: #fff;
   font-size: 15px;
   font-weight: 700;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.42),
-    0 8px 18px rgba(44, 99, 230, 0.18);
+  box-shadow: none;
+  overflow: hidden;
 }
 
-.brand-mark svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-word {
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
+}
+
+.auth-story-panel .brand {
+  gap: 16px;
+}
+
+.auth-story-panel .brand-mark {
+  width: 58px;
+  height: 58px;
+}
+
+.auth-story-panel .brand-word {
+  font-size: 34px;
 }
 
 .sidebar-nav {
@@ -289,6 +297,10 @@ button {
 
 .avatar-image {
   object-fit: cover;
+}
+
+.default-avatar-image {
+  object-fit: contain;
 }
 
 .profile-avatar {
@@ -1246,30 +1258,6 @@ textarea:focus {
   opacity: 0.88;
 }
 
-.auth-preview-card div {
-  position: absolute;
-  right: 18px;
-  bottom: 18px;
-  left: 18px;
-  display: grid;
-  gap: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.78);
-  padding: 16px 18px;
-  backdrop-filter: blur(22px) saturate(150%);
-}
-
-.auth-preview-card span {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.auth-preview-card strong {
-  color: var(--ink);
-  font-size: 18px;
-}
-
 .auth-proof-row {
   display: flex;
   flex-wrap: wrap;
@@ -1299,8 +1287,9 @@ textarea:focus {
 }
 
 .auth-form-header {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 4px;
 }
 
@@ -1312,13 +1301,18 @@ textarea:focus {
 
 .auth-form-icon {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 58px;
+  height: 58px;
   place-items: center;
-  border-radius: 15px;
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 12px 24px rgba(44, 99, 230, 0.2);
+  flex: 0 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.auth-form-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .auth-field {
@@ -1709,7 +1703,7 @@ textarea:focus {
 }
 
 .theme-dark .brand-mark {
-  background: linear-gradient(145deg, rgba(122, 164, 255, 0.9), rgba(56, 94, 180, 0.82));
+  background: transparent;
 }
 
 .theme-dark .search-pill svg,

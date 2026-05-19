@@ -49,7 +49,8 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	if utf8.RuneCountInString(content) > 1000 {
 		return nil, ErrInvalidInput
 	}
-	if _, err := s.users.FindByID(ctx, input.UserID); err != nil {
+	user, err := s.users.FindByID(ctx, input.UserID)
+	if err != nil {
 		return nil, err
 	}
 	post, err := s.posts.FindByID(ctx, input.PostID)
@@ -60,6 +61,7 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	comment := &model.Comment{
 		PostID:  input.PostID,
 		UserID:  input.UserID,
+		User:    user,
 		Content: content,
 		Status:  1,
 	}

@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { ArrowRight, LockKeyhole, Sparkles, UserRound } from "lucide-react";
+import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
 import { Navigate, Link, useNavigate } from "react-router-dom";
 import banner from "../assets/devflow-banner.jpg";
+import loginIcon from "../assets/login-icon.png";
+import registerIcon from "../assets/register-icon.png";
 import { useAuth } from "../state/auth";
 import { Brand } from "../components/Brand";
 
@@ -45,10 +47,6 @@ export function AuthPage({ mode }) {
           </div>
           <div className="auth-preview-card">
             <img src={banner} alt="" />
-            <div>
-              <span>DevFlow</span>
-              <strong>工程动态正在同步</strong>
-            </div>
           </div>
           <div className="auth-proof-row" aria-label="核心状态">
             <span>动态发布</span>
@@ -60,9 +58,8 @@ export function AuthPage({ mode }) {
       <form className="auth-form surface" onSubmit={submit}>
         <div className="auth-form-header">
           <span className="auth-form-icon">
-            <Sparkles size={18} />
+            <img src={mode === "register" ? registerIcon : loginIcon} alt="" />
           </span>
-          <p className="eyebrow">{mode === "register" ? "创建账号" : "欢迎回来"}</p>
           <h2>{mode === "register" ? "注册 DevFlow" : "登录 DevFlow"}</h2>
         </div>
         <label className="auth-field">

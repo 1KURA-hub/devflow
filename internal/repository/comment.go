@@ -30,6 +30,7 @@ func (r *CommentRepository) Create(ctx context.Context, comment *model.Comment) 
 
 func (r *CommentRepository) ListByPost(ctx context.Context, postID uint64, cursor *time.Time, limit int) ([]model.Comment, error) {
 	query := r.db.WithContext(ctx).
+		Preload("User").
 		Where("post_id = ? AND status = ?", postID, 1).
 		Order("created_at DESC").
 		Order("id DESC").

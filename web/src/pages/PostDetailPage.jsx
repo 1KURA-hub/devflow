@@ -63,7 +63,7 @@ export function PostDetailPage() {
             {comments.map((comment) => (
               <article key={comment.id}>
                 <div>
-                  <strong>用户 #{comment.user_id}</strong>
+                  <strong>{comment.user?.nickname || comment.user?.username || `用户 #${comment.user_id}`}</strong>
                   <time>{formatDate(comment.created_at)}</time>
                 </div>
                 <p>{comment.content}</p>
