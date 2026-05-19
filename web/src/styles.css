@@ -71,7 +71,9 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
+  width: min(1440px, 100%);
   min-height: 100vh;
+  margin: 0 auto;
   grid-template-columns: 268px minmax(0, 1fr);
   gap: 28px;
   padding: 28px;
@@ -418,10 +420,12 @@ button {
 .page-shell {
   width: min(1270px, 100%);
   min-height: calc(100vh - 56px);
+  margin: 0 auto;
 }
 
 .dashboard-layout {
   display: grid;
+  width: 100%;
   min-height: 0;
   grid-template-columns: minmax(610px, 830px) minmax(280px, 360px);
   justify-content: space-between;
@@ -1428,6 +1432,15 @@ textarea:focus {
   color: var(--ink);
 }
 
+.theme-dark .feed-toolbar a {
+  color: var(--ink);
+}
+
+.theme-dark .feed-toolbar a:hover,
+.theme-dark .feed-toolbar a.active {
+  color: var(--accent);
+}
+
 .theme-dark .brand-word,
 .theme-dark .sidebar-profile strong,
 .theme-dark .sidebar-profile-stats strong,
@@ -1473,7 +1486,7 @@ textarea:focus {
   color: var(--ink);
 }
 
-.theme-dark .sidebar-profile button,
+.theme-dark .sidebar-profile > button,
 .theme-dark .sidebar-utilities button,
 .theme-dark .composer-strip div button,
 .theme-dark .feed-toolbar button,
@@ -1484,6 +1497,25 @@ textarea:focus {
 .theme-dark .search-pill svg,
 .theme-dark .add-pill,
 .theme-dark .add-pill svg {
+  color: var(--ink);
+}
+
+.theme-dark .sidebar-profile > button {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.theme-dark .sidebar-profile > button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.theme-dark .search-pill input {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
   color: var(--ink);
 }
 
@@ -1531,7 +1563,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1320px) {
   .app-shell {
     height: auto;
     min-height: 100vh;
@@ -1541,6 +1573,7 @@ textarea:focus {
   .desktop-shell {
     height: auto;
     min-height: 100vh;
+    width: min(980px, 100%);
     grid-template-columns: 1fr;
     overflow: visible;
   }
