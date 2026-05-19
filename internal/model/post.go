@@ -13,7 +13,6 @@ type Post struct {
 	Title         string         `gorm:"type:varchar(120);not null" json:"title"`
 	Content       string         `gorm:"type:text;not null" json:"content"`
 	Tags          string         `gorm:"type:varchar(255);not null;default:''" json:"tags"`
-	CoverURL      string         `gorm:"type:varchar(512);not null;default:''" json:"cover_url"`
 	LikeCount     int64          `gorm:"not null;default:0" json:"like_count"`
 	CommentCount  int64          `gorm:"not null;default:0" json:"comment_count"`
 	FavoriteCount int64          `gorm:"not null;default:0" json:"favorite_count"`

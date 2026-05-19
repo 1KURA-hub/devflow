@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { Image, X } from "lucide-react";
+import { X } from "lucide-react";
 import { api } from "../api/client";
 
 export function ComposerModal({ open, onClose }) {
-  const [form, setForm] = useState({ title: "", content: "", tags: "", cover_url: "" });
+  const [form, setForm] = useState({ title: "", content: "", tags: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
   if (!open) {
@@ -18,7 +17,7 @@ export function ComposerModal({ open, onClose }) {
     setError("");
     try {
       await api.createPost(form);
-      setForm({ title: "", content: "", tags: "", cover_url: "" });
+      setForm({ title: "", content: "", tags: "" });
       onClose();
       window.dispatchEvent(new CustomEvent("devflow:post-created"));
       window.dispatchEvent(new CustomEvent("devflow:celebrate"));
@@ -29,27 +28,9 @@ export function ComposerModal({ open, onClose }) {
     }
   }
 
-  async function uploadCover(event) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) {
-      return;
-    }
-    setUploading(true);
-    setError("");
-    try {
-      const result = await api.uploadImage(file);
-      setForm((current) => ({ ...current, cover_url: result.url }));
-    } catch (nextError) {
-      setError(nextError.message);
-    } finally {
-      setUploading(false);
-    }
-  }
-
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="发布动态">
-      <form className="composer-modal" onSubmit={submit}>
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="发布动态" onClick={onClose}>
+      <form className="composer-modal" onSubmit={submit} onClick={(event) => event.stopPropagation()}>
         <button className="icon-command modal-close" type="button" onClick={onClose} aria-label="关闭">
           <X size={18} />
         </button>
@@ -84,19 +65,6 @@ export function ComposerModal({ open, onClose }) {
             placeholder="Go, Redis, RabbitMQ"
           />
         </label>
-        <div className="cover-picker">
-          <label className="cover-upload">
-            <Image size={16} />
-            {uploading ? "上传封面中..." : form.cover_url ? "更换动态封面" : "选择动态封面"}
-            <input type="file" accept="image/*" onChange={uploadCover} disabled={uploading} />
-          </label>
-          {form.cover_url ? (
-            <button className="ghost-button" type="button" onClick={() => setForm({ ...form, cover_url: "" })}>
-              移除封面
-            </button>
-          ) : null}
-        </div>
-        {form.cover_url ? <img className="cover-preview" src={form.cover_url} alt="动态封面预览" /> : null}
         {error ? <p className="form-error">{error}</p> : null}
         <div className="modal-actions">
           <button className="ghost-button" type="button" onClick={onClose}>

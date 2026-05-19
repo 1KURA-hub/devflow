@@ -59,7 +59,6 @@ export function PostCard({ post, compact = false, rich = false }) {
 
   const author = post.author || null;
   const authorName = author?.nickname || `作者 #${post.author_id}`;
-  const previewStyle = post.cover_url ? { backgroundImage: `url(${post.cover_url})` } : undefined;
 
   return (
     <article className={`post-card ${compact ? "compact" : ""}`} onClick={openPost}>
@@ -70,7 +69,7 @@ export function PostCard({ post, compact = false, rich = false }) {
         </Link>
         <time>{formatDate(post.created_at)}</time>
       </div>
-      {rich || post.cover_url ? <div className={`post-preview ${post.cover_url ? "custom-cover" : ""}`} style={previewStyle} aria-hidden="true" /> : null}
+      {rich ? <div className="post-preview" aria-hidden="true" /> : null}
       <h3 className="post-title">{post.title}</h3>
       <p className="post-copy">{post.content}</p>
       <div className="tag-row">

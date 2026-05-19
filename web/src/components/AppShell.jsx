@@ -21,8 +21,50 @@ import { Avatar } from "./Avatar";
 import { Brand } from "./Brand";
 import { ComposerModal } from "./ComposerModal";
 
-const backgroundKey = "devflow_background_image";
-const maxBackgroundSize = 4 * 1024 * 1024;
+const backgroundDBName = "devflow_ui";
+const backgroundStoreName = "preferences";
+const backgroundRecordKey = "background_image";
+const maxBackgroundSize = 8 * 1024 * 1024;
+
+function openBackgroundDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("当前浏览器不支持大图背景存储"));
+      return;
+    }
+
+    const request = window.indexedDB.open(backgroundDBName, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(backgroundStoreName);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error("背景存储打开失败"));
+  });
+}
+
+function backgroundStoreAction(mode, value) {
+  return openBackgroundDB().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction(backgroundStoreName, mode === "get" ? "readonly" : "readwrite");
+        const store = tx.objectStore(backgroundStoreName);
+        const request =
+          mode === "get"
+            ? store.get(backgroundRecordKey)
+            : mode === "delete"
+              ? store.delete(backgroundRecordKey)
+              : store.put(value, backgroundRecordKey);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("背景存储失败"));
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error || new Error("背景存储失败"));
+        };
+      })
+  );
+}
 
 export function AppShell() {
   const { user, updateMe, logout } = useAuth();
@@ -31,12 +73,34 @@ export function AppShell() {
   const [composerOpen, setComposerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState(() => localStorage.getItem(backgroundKey) || "");
+  const [backgroundImage, setBackgroundImage] = useState("");
   const [backgroundError, setBackgroundError] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [darkTheme, setDarkTheme] = useState(false);
   const [richFeed, setRichFeed] = useState(false);
   const [profileStats, setProfileStats] = useState({ posts: 0, following: 0, followers: 0 });
+
+  useEffect(() => {
+    let active = true;
+    let objectURL = "";
+
+    backgroundStoreAction("get")
+      .then((blob) => {
+        if (!active || !blob) {
+          return;
+        }
+        objectURL = URL.createObjectURL(blob);
+        setBackgroundImage(objectURL);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+      if (objectURL) {
+        URL.revokeObjectURL(objectURL);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -150,7 +214,7 @@ export function AppShell() {
     }));
   }
 
-  function changeBackground(event) {
+  async function changeBackground(event) {
     const file = event.target.files?.[0];
     event.target.value = "";
     setBackgroundError("");
@@ -162,28 +226,37 @@ export function AppShell() {
       return;
     }
     if (file.size > maxBackgroundSize) {
-      setBackgroundError("图片不能超过 4MB");
+      setBackgroundError("图片不能超过 8MB");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result || "");
-      try {
-        localStorage.setItem(backgroundKey, result);
-        setBackgroundImage(result);
-      } catch {
-        setBackgroundError("浏览器本地空间不足，请换一张更小的图片");
-      }
-    };
-    reader.onerror = () => setBackgroundError("图片读取失败，请重新选择");
-    reader.readAsDataURL(file);
+    try {
+      await backgroundStoreAction("put", file);
+      const nextURL = URL.createObjectURL(file);
+      setBackgroundImage((current) => {
+        if (current.startsWith("blob:")) {
+          URL.revokeObjectURL(current);
+        }
+        return nextURL;
+      });
+    } catch (error) {
+      setBackgroundError(error.message || "背景保存失败，请换一张更小的图片");
+    }
   }
 
-  function resetBackground() {
-    setBackgroundImage("");
+  async function resetBackground() {
+    setBackgroundImage((current) => {
+      if (current.startsWith("blob:")) {
+        URL.revokeObjectURL(current);
+      }
+      return "";
+    });
     setBackgroundError("");
-    localStorage.removeItem(backgroundKey);
+    try {
+      await backgroundStoreAction("delete");
+    } catch {
+      setBackgroundError("背景重置失败，请稍后重试");
+    }
   }
 
   async function changeAvatar(event) {
@@ -310,8 +383,8 @@ export function AppShell() {
         </div>
       </div>
       {settingsOpen ? (
-        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="界面设置">
-          <section className="settings-modal">
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="界面设置" onClick={() => setSettingsOpen(false)}>
+          <section className="settings-modal" onClick={(event) => event.stopPropagation()}>
             <button className="icon-command modal-close" type="button" onClick={() => setSettingsOpen(false)} aria-label="关闭">
               <X size={18} />
             </button>

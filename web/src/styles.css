@@ -51,9 +51,8 @@ button {
 
 .app-shell {
   position: relative;
-  min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  height: 100vh;
+  overflow: hidden;
   background:
     linear-gradient(rgba(228, 240, 250, 0.14), rgba(228, 240, 250, 0.14)),
     var(--custom-bg, url("./assets/devflow-wallpaper.jpg")) center / cover fixed;
@@ -71,11 +70,11 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
-  min-height: 100vh;
+  height: 100vh;
   grid-template-columns: 268px minmax(0, 1fr);
   gap: 28px;
   padding: 28px;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .glass-panel,
@@ -351,7 +350,8 @@ button {
 
 .workspace {
   min-width: 0;
-  min-height: calc(100vh - 56px);
+  height: calc(100vh - 56px);
+  min-height: 0;
   padding-top: 0;
 }
 
@@ -440,8 +440,8 @@ button {
 
 .feed-frame {
   display: grid;
+  height: 100%;
   min-height: 0;
-  min-height: calc(100vh - 56px);
   border-radius: var(--radius-xl);
   padding: 14px;
   overflow: hidden;
@@ -449,8 +449,10 @@ button {
 
 .feed-column {
   min-height: 0;
-  overflow-y: visible;
-  padding-right: 4px;
+  overflow-y: auto;
+  padding-right: 8px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .inset-panel {
@@ -638,11 +640,6 @@ button {
     url("./assets/devflow-banner.jpg") center / cover;
 }
 
-.post-preview.custom-cover {
-  background-position: center;
-  background-size: cover;
-}
-
 .post-meta {
   display: flex;
   align-items: center;
@@ -750,14 +747,20 @@ button {
 }
 
 .dashboard-rail {
-  position: sticky;
-  top: 28px;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: calc(100vh - 56px);
   min-height: 0;
-  max-height: calc(100vh - 56px);
+  max-height: none;
   overflow: hidden;
+}
+
+.dashboard-rail .glass-panel,
+.dashboard-rail .user-summary,
+.dashboard-rail .rail-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 }
 
 .rail-top {
@@ -898,10 +901,10 @@ button {
 }
 
 .sidebar-utilities {
-  position: absolute;
+  position: fixed;
   bottom: 28px;
   left: 55px;
-  z-index: 2;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -998,6 +1001,8 @@ button {
   display: grid;
   gap: 18px;
   width: min(620px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius-xl);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(239, 247, 255, 0.76));
@@ -1005,38 +1010,6 @@ button {
   box-shadow: var(--shadow);
   backdrop-filter: blur(26px) saturate(145%);
   animation: modal-spring 260ms cubic-bezier(0.2, 1.1, 0.28, 1) both;
-}
-
-.cover-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.cover-upload {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: auto;
-  min-height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.42);
-  padding: 0 14px;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.cover-upload input {
-  display: none;
-}
-
-.cover-preview {
-  width: 100%;
-  max-height: 180px;
-  object-fit: cover;
-  border-radius: 18px;
 }
 
 .settings-modal {
@@ -1201,6 +1174,12 @@ textarea:focus {
 }
 
 .modal-actions {
+  position: sticky;
+  bottom: -28px;
+  margin: 0 -28px -28px;
+  padding: 14px 28px 28px;
+  border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+  background: linear-gradient(180deg, rgba(239, 247, 255, 0), rgba(239, 247, 255, 0.92) 34%);
   justify-content: flex-end;
   gap: 10px;
 }
@@ -1470,6 +1449,16 @@ textarea:focus {
 .theme-dark .search-pill svg,
 .theme-dark .add-pill {
   color: #fff;
+}
+
+.theme-dark .dashboard-rail .glass-panel,
+.theme-dark .dashboard-rail .user-summary,
+.theme-dark .dashboard-rail .rail-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.theme-dark .modal-actions {
+  background: linear-gradient(180deg, rgba(8, 13, 22, 0), rgba(8, 13, 22, 0.94) 34%);
 }
 
 @media (prefers-reduced-motion: reduce) {
