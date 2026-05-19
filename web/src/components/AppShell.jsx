@@ -6,9 +6,11 @@ import {
   Images,
   Rows3,
   Moon,
+  RotateCcw,
   Settings,
   Star,
   SunMedium,
+  Upload,
   UserRound,
   X
 } from "lucide-react";
@@ -18,12 +20,17 @@ import { useAuth } from "../state/auth";
 import { Brand } from "./Brand";
 import { ComposerModal } from "./ComposerModal";
 
+const backgroundKey = "devflow_background_image";
+const maxBackgroundSize = 4 * 1024 * 1024;
+
 export function AppShell() {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [composerOpen, setComposerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState(() => localStorage.getItem(backgroundKey) || "");
+  const [backgroundError, setBackgroundError] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
   const [darkTheme, setDarkTheme] = useState(false);
   const [richFeed, setRichFeed] = useState(false);
@@ -92,8 +99,47 @@ export function AppShell() {
     navigate("/login");
   }
 
+  function changeBackground(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setBackgroundError("");
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setBackgroundError("请选择图片文件");
+      return;
+    }
+    if (file.size > maxBackgroundSize) {
+      setBackgroundError("图片不能超过 4MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      try {
+        localStorage.setItem(backgroundKey, result);
+        setBackgroundImage(result);
+      } catch {
+        setBackgroundError("浏览器本地空间不足，请换一张更小的图片");
+      }
+    };
+    reader.onerror = () => setBackgroundError("图片读取失败，请重新选择");
+    reader.readAsDataURL(file);
+  }
+
+  function resetBackground() {
+    setBackgroundImage("");
+    setBackgroundError("");
+    localStorage.removeItem(backgroundKey);
+  }
+
   return (
-    <div className={`app-shell ${darkTheme ? "theme-dark" : ""}`}>
+    <div
+      className={`app-shell ${darkTheme ? "theme-dark" : ""}`}
+      style={backgroundImage ? { "--custom-bg": `url(${backgroundImage})` } : undefined}
+    >
       <div className="ambient-overlay" />
       <div className="desktop-shell">
         <aside className="glass-panel sidebar">
@@ -171,7 +217,7 @@ export function AppShell() {
 
         <div className="workspace">
           <main className="page-shell">
-            <Outlet context={{ openComposer, richFeed }} />
+            <Outlet context={{ openComposer, richFeed, profileStats }} />
           </main>
         </div>
 
@@ -215,6 +261,22 @@ export function AppShell() {
               </span>
               {richFeed ? <Images size={19} /> : <Rows3 size={19} />}
             </button>
+            <div className="setting-row background-control">
+              <span>
+                <strong>背景图片</strong>
+                <em>{backgroundImage ? "已使用本地自定义背景" : "当前使用默认背景"}</em>
+              </span>
+              <div>
+                <label className="icon-command background-upload" aria-label="上传背景">
+                  <Upload size={17} />
+                  <input type="file" accept="image/*" onChange={changeBackground} />
+                </label>
+                <button className="icon-command" type="button" onClick={resetBackground} aria-label="恢复默认背景">
+                  <RotateCcw size={17} />
+                </button>
+              </div>
+            </div>
+            {backgroundError ? <p className="form-error">{backgroundError}</p> : null}
           </section>
         </div>
       ) : null}

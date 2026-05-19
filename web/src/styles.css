@@ -56,7 +56,7 @@ button {
   overflow-y: hidden;
   background:
     linear-gradient(rgba(228, 240, 250, 0.14), rgba(228, 240, 250, 0.14)),
-    url("./assets/devflow-wallpaper.jpg") center / cover fixed;
+    var(--custom-bg, url("./assets/devflow-wallpaper.jpg")) center / cover fixed;
 }
 
 .ambient-overlay {
@@ -80,6 +80,7 @@ button {
 
 .glass-panel,
 .surface {
+  animation: glass-rise 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   border: 1px solid var(--line);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(239, 247, 255, 0.88));
   box-shadow:
@@ -90,6 +91,7 @@ button {
 }
 
 .glass-pill {
+  animation: glass-pop 480ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   border: 1px solid var(--line);
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(239, 247, 255, 0.78));
   box-shadow:
@@ -98,6 +100,28 @@ button {
   backdrop-filter: blur(30px) saturate(160%);
   -webkit-backdrop-filter: blur(30px) saturate(160%);
   border-radius: 999px;
+}
+
+@keyframes glass-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes glass-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .sidebar {
@@ -160,6 +184,12 @@ button {
   border-radius: 16px;
   color: rgba(16, 35, 70, 0.86);
   font-weight: 600;
+  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.sidebar-nav a:hover {
+  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.46);
 }
 
 .sidebar-nav a.active {
@@ -207,6 +237,14 @@ button {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.5);
   color: rgba(22, 35, 61, 0.72);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.sidebar-profile button:hover,
+.sidebar-utilities button:hover,
+.icon-command:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .sidebar-profile-main {
@@ -314,6 +352,14 @@ button {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
     0 12px 28px rgba(29, 55, 90, 0.12);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.search-pill:focus-within {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 16px 34px rgba(29, 55, 90, 0.16);
 }
 
 .search-pill input {
@@ -344,6 +390,14 @@ button {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
     0 12px 28px rgba(29, 55, 90, 0.12);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.add-pill:hover,
+.primary-button:hover,
+.ghost-button:hover,
+.load-more:hover {
+  transform: translateY(-1px) scale(1.03);
 }
 
 .page-shell {
@@ -438,6 +492,13 @@ button {
   padding: 0;
   font-style: normal;
   font-size: 13px;
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.composer-strip div button:hover,
+.composer-prompt:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .feed-toolbar {
@@ -459,6 +520,14 @@ button {
   color: rgba(22, 35, 61, 0.66);
   font-weight: 600;
   font-size: 16px;
+  transition: transform 180ms ease, color 180ms ease;
+}
+
+.feed-toolbar a:hover,
+.feed-toolbar button:hover,
+.rail-card header button:hover {
+  transform: translateY(-1px);
+  color: var(--accent);
 }
 
 .feed-toolbar a.active,
@@ -503,6 +572,14 @@ button {
   padding: 6px 11px;
   color: rgba(22, 35, 61, 0.72);
   font-size: 12px;
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.filter-panel button:hover,
+.topic-grid button:hover,
+.follow-list button:hover,
+.setting-row:hover {
+  transform: translateY(-1px) scale(1.02);
 }
 
 .filter-panel button.active,
@@ -772,6 +849,7 @@ button {
   border-radius: 999px;
   background: transparent;
   color: rgba(22, 35, 61, 0.74);
+  transition: transform 180ms ease, background 180ms ease;
 }
 
 .state-box,
@@ -867,6 +945,18 @@ button {
   box-shadow: var(--shadow);
   backdrop-filter: blur(34px) saturate(165%);
   -webkit-backdrop-filter: blur(34px) saturate(165%);
+  animation: modal-spring 260ms cubic-bezier(0.2, 1.1, 0.28, 1) both;
+}
+
+@keyframes modal-spring {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .settings-modal h2 {
@@ -886,6 +976,7 @@ button {
   color: var(--ink);
   text-align: left;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
 }
 
 .setting-row span {
@@ -901,6 +992,19 @@ button {
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
+}
+
+.background-control > div {
+  display: flex;
+  gap: 8px;
+}
+
+.background-upload {
+  cursor: pointer;
+}
+
+.background-upload input {
+  display: none;
 }
 
 .icon-command {
@@ -1039,16 +1143,60 @@ textarea:focus {
   gap: 16px;
 }
 
-.profile-stats span {
+.profile-stats button {
   display: grid;
   gap: 4px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 10px 14px;
   color: var(--muted);
   font-size: 13px;
+  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.profile-stats button:hover,
+.profile-stats button.active {
+  transform: translateY(-1px);
+  background: rgba(44, 99, 230, 0.12);
+  color: var(--accent);
 }
 
 .profile-stats strong {
   color: var(--ink);
   font-size: 18px;
+}
+
+.user-list-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.user-list-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+  padding: 12px;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.user-list-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.user-list-item strong,
+.user-list-item span {
+  display: block;
+}
+
+.user-list-item span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .notification-list {
@@ -1079,14 +1227,105 @@ textarea:focus {
   --ink: #f4f7fb;
   --muted: rgba(244, 247, 251, 0.64);
   --accent: #7aa4ff;
-  --glass: rgba(19, 31, 49, 0.48);
-  --glass-strong: rgba(24, 37, 58, 0.64);
+  --line: rgba(255, 255, 255, 0.22);
+  --line-soft: rgba(255, 255, 255, 0.14);
+  --glass: rgba(11, 17, 28, 0.82);
+  --glass-strong: rgba(15, 23, 36, 0.9);
+  --glass-muted: rgba(24, 34, 50, 0.72);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+  --shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.28);
+  color-scheme: dark;
 }
 
 .theme-dark .ambient-overlay {
   background:
-    linear-gradient(180deg, rgba(12, 19, 29, 0.22), rgba(12, 19, 29, 0.34)),
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.16), transparent 34%);
+    linear-gradient(180deg, rgba(3, 8, 15, 0.34), rgba(3, 8, 15, 0.48)),
+    radial-gradient(circle at top left, rgba(112, 154, 255, 0.18), transparent 34%);
+}
+
+.theme-dark .glass-panel,
+.theme-dark .surface,
+.theme-dark .settings-modal,
+.theme-dark .composer-modal {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: linear-gradient(145deg, rgba(15, 23, 36, 0.88), rgba(8, 13, 22, 0.76));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    var(--shadow);
+}
+
+.theme-dark .glass-pill,
+.theme-dark .inset-panel,
+.theme-dark .post-card,
+.theme-dark .sidebar-profile,
+.theme-dark .setting-row,
+.theme-dark .user-list-item,
+.theme-dark .search-pill,
+.theme-dark .add-pill,
+.theme-dark .sidebar-utilities {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(145deg, rgba(20, 30, 46, 0.78), rgba(8, 13, 22, 0.66));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    var(--shadow-soft);
+}
+
+.theme-dark .sidebar-nav a,
+.theme-dark .composer-strip div,
+.theme-dark .post-copy,
+.theme-dark .tag-row span,
+.theme-dark .topic-grid button,
+.theme-dark .filter-panel button {
+  color: rgba(244, 247, 251, 0.74);
+}
+
+.theme-dark .sidebar-nav a.active,
+.theme-dark .sidebar-nav a:hover,
+.theme-dark .profile-stats button.active,
+.theme-dark .filter-panel button.active,
+.theme-dark .topic-grid button.active {
+  background: rgba(122, 164, 255, 0.16);
+  color: var(--accent);
+}
+
+.theme-dark .sidebar-profile-stats span,
+.theme-dark .profile-stats button,
+.theme-dark .tag-row span,
+.theme-dark .filter-panel button,
+.theme-dark .topic-grid button,
+.theme-dark .follow-list button,
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark .icon-command {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+}
+
+.theme-dark .profile-avatar,
+.theme-dark .mini-avatar,
+.theme-dark .tiny-avatar,
+.theme-dark .avatar {
+  background: rgba(122, 164, 255, 0.16);
+  color: rgba(244, 247, 251, 0.88);
+}
+
+.theme-dark .brand-mark {
+  background: linear-gradient(145deg, rgba(122, 164, 255, 0.9), rgba(56, 94, 180, 0.82));
+}
+
+.theme-dark .search-pill svg,
+.theme-dark .add-pill {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
 }
 
 @media (max-width: 1180px) {

@@ -22,7 +22,7 @@ const feedTabs = [
 
 export function FeedPage({ mode }) {
   const { user } = useAuth();
-  const { openComposer, richFeed } = useOutletContext();
+  const { openComposer, richFeed, profileStats } = useOutletContext();
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTag, setActiveTag] = useState("");
@@ -158,15 +158,15 @@ export function FeedPage({ mode }) {
             <dl>
               <div>
                 <dt>动态</dt>
-                <dd>231</dd>
+                <dd>{profileStats?.posts ?? 0}</dd>
               </div>
               <div>
                 <dt>关注</dt>
-                <dd>86</dd>
+                <dd>{profileStats?.following ?? 0}</dd>
               </div>
               <div>
                 <dt>粉丝</dt>
-                <dd>1,324</dd>
+                <dd>{profileStats?.followers ?? 0}</dd>
               </div>
             </dl>
           </section>
