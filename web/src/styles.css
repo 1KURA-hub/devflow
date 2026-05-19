@@ -51,9 +51,9 @@ button {
 
 .app-shell {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   background:
     linear-gradient(rgba(228, 240, 250, 0.14), rgba(228, 240, 250, 0.14)),
     var(--custom-bg, url("./assets/devflow-wallpaper.jpg")) center / cover fixed;
@@ -71,11 +71,11 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
-  height: 100vh;
+  min-height: 100vh;
   grid-template-columns: 268px minmax(0, 1fr);
   gap: 28px;
   padding: 28px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .glass-panel,
@@ -125,6 +125,8 @@ button {
 }
 
 .sidebar {
+  position: sticky;
+  top: 28px;
   display: grid;
   align-self: start;
   gap: 24px;
@@ -275,6 +277,11 @@ button {
   background: rgba(32, 61, 103, 0.1);
   color: rgba(16, 35, 70, 0.76);
   font-weight: 700;
+  overflow: hidden;
+}
+
+.avatar-image {
+  object-fit: cover;
 }
 
 .profile-avatar {
@@ -315,16 +322,25 @@ button {
   padding-top: 4px;
 }
 
-.sidebar-profile-stats span {
+.sidebar-profile-stats button {
   display: grid;
+  width: auto;
+  height: auto;
   gap: 3px;
   margin: 0;
   padding: 10px 6px;
+  border: 0;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--muted);
   text-align: center;
   font-size: 12px;
+  transition: transform 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.sidebar-profile-stats button:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
 }
 
 .sidebar-profile-stats strong {
@@ -335,8 +351,7 @@ button {
 
 .workspace {
   min-width: 0;
-  min-height: 0;
-  height: calc(100vh - 56px);
+  min-height: calc(100vh - 56px);
   padding-top: 0;
 }
 
@@ -426,7 +441,7 @@ button {
 .feed-frame {
   display: grid;
   min-height: 0;
-  height: 100%;
+  min-height: calc(100vh - 56px);
   border-radius: var(--radius-xl);
   padding: 14px;
   overflow: hidden;
@@ -434,7 +449,7 @@ button {
 
 .feed-column {
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: visible;
   padding-right: 4px;
 }
 
@@ -595,6 +610,7 @@ button {
 }
 
 .post-card {
+  cursor: pointer;
   display: grid;
   gap: 10px;
   padding: 16px 18px;
@@ -622,15 +638,35 @@ button {
     url("./assets/devflow-banner.jpg") center / cover;
 }
 
+.post-preview.custom-cover {
+  background-position: center;
+  background-size: cover;
+}
+
 .post-meta {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   color: var(--muted);
   font-size: 13px;
 }
 
+.post-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.post-author span {
+  color: var(--ink);
+  font-weight: 700;
+}
+
 .post-title {
+  margin: 0;
+  color: var(--ink);
   font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
@@ -670,6 +706,7 @@ button {
 }
 
 .post-actions {
+  justify-content: flex-end;
   gap: 18px;
   color: var(--muted);
   font-size: 14px;
@@ -683,18 +720,43 @@ button {
   border: 0;
   background: transparent;
   color: inherit;
+  transition: transform 160ms ease, color 160ms ease;
 }
 
 .post-actions button.active {
-  color: var(--accent);
+  color: #e0445f;
+  animation: action-pop 360ms cubic-bezier(0.2, 1.3, 0.3, 1) both;
+}
+
+.post-actions .favorite-action.active {
+  color: #e5a900;
+}
+
+.post-actions button:hover,
+.post-actions a:hover {
+  transform: translateY(-1px) scale(1.08);
+}
+
+@keyframes action-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  58% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .dashboard-rail {
+  position: sticky;
+  top: 28px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
-  height: 100%;
+  max-height: calc(100vh - 56px);
   overflow: hidden;
 }
 
@@ -741,10 +803,20 @@ button {
   font-weight: 700;
 }
 
+.user-summary dd a {
+  display: inline-block;
+  transition: transform 160ms ease, color 160ms ease;
+}
+
+.user-summary dd a:hover {
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
 .rail-card {
   display: grid;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 12px;
+  padding: 16px 18px;
 }
 
 .rail-card header {
@@ -761,12 +833,12 @@ button {
 .topic-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 7px;
 }
 
 .follow-list {
   display: grid;
-  gap: 8px;
+  gap: 7px;
 }
 
 .follow-list article {
@@ -918,6 +990,7 @@ button {
   padding: 20px;
   background: rgba(15, 26, 42, 0.26);
   backdrop-filter: blur(8px);
+  animation: backdrop-in 180ms ease both;
 }
 
 .composer-modal {
@@ -931,6 +1004,39 @@ button {
   padding: 28px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(26px) saturate(145%);
+  animation: modal-spring 260ms cubic-bezier(0.2, 1.1, 0.28, 1) both;
+}
+
+.cover-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.cover-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  padding: 0 14px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.cover-upload input {
+  display: none;
+}
+
+.cover-preview {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 18px;
 }
 
 .settings-modal {
@@ -956,6 +1062,15 @@ button {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -1005,6 +1120,44 @@ button {
 
 .background-upload input {
   display: none;
+}
+
+.danger-row {
+  color: #b73542;
+}
+
+.celebration-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.celebration-burst span {
+  --angle: calc(var(--i) * 20deg);
+  position: absolute;
+  top: 48%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: hsl(calc(var(--i) * 24) 86% 58%);
+  animation: firework 1100ms cubic-bezier(0.18, 0.8, 0.28, 1) forwards;
+}
+
+@keyframes firework {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.7);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-190px) scale(1.1);
+  }
 }
 
 .icon-command {
@@ -1288,7 +1441,7 @@ textarea:focus {
   color: var(--accent);
 }
 
-.theme-dark .sidebar-profile-stats span,
+.theme-dark .sidebar-profile-stats button,
 .theme-dark .profile-stats button,
 .theme-dark .tag-row span,
 .theme-dark .filter-panel button,

@@ -42,3 +42,14 @@ func (r *UserRepository) FindByUsername(ctx context.Context, username string) (*
 	}
 	return &user, nil
 }
+
+func (r *UserRepository) UpdateProfile(ctx context.Context, user *model.User) error {
+	return r.db.WithContext(ctx).
+		Model(&model.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]any{
+			"nickname":   user.Nickname,
+			"bio":        user.Bio,
+			"avatar_url": user.AvatarURL,
+		}).Error
+}

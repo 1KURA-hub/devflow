@@ -22,6 +22,12 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
+type updateMeRequest struct {
+	Nickname  *string `json:"nickname"`
+	Bio       *string `json:"bio"`
+	AvatarURL *string `json:"avatar_url"`
+}
+
 func (a *App) register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -68,6 +74,30 @@ func (a *App) me(c *gin.Context) {
 	user, err := a.authService.Me(c.Request.Context(), userID)
 	if err != nil {
 		response.Error(c, http.StatusNotFound, "user not found")
+		return
+	}
+	response.OK(c, user)
+}
+
+func (a *App) updateMe(c *gin.Context) {
+	userID, ok := middleware.CurrentUserID(c)
+	if !ok {
+		response.Error(c, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	var req updateMeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	user, err := a.authService.UpdateProfile(c.Request.Context(), service.UpdateProfileInput{
+		UserID:    userID,
+		Nickname:  req.Nickname,
+		Bio:       req.Bio,
+		AvatarURL: req.AvatarURL,
+	})
+	if err != nil {
+		writeAuthError(c, err)
 		return
 	}
 	response.OK(c, user)

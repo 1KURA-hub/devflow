@@ -16,6 +16,7 @@ func NewRouter(app *App) *gin.Engine {
 	router.Use(gin.Logger(), gin.Recovery())
 
 	router.GET("/healthz", app.healthz)
+	router.Static("/uploads", "./uploads")
 
 	api := router.Group("/api")
 	{
@@ -34,6 +35,8 @@ func NewRouter(app *App) *gin.Engine {
 		authenticated.Use(middleware.Auth(app.cfg.JWTSecret))
 		{
 			authenticated.GET("/me", app.me)
+			authenticated.PATCH("/me", app.updateMe)
+			authenticated.POST("/uploads/image", app.uploadImage)
 			authenticated.POST("/posts", app.createPost)
 			authenticated.POST("/users/:id/follow", app.followUser)
 			authenticated.DELETE("/users/:id/follow", app.unfollowUser)

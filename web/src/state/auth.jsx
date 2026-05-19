@@ -52,6 +52,11 @@ export function AuthProvider({ children }) {
         setUser(result.user);
         return result;
       },
+      async updateMe(body) {
+        const nextUser = await api.updateMe(body);
+        setUser(nextUser);
+        return nextUser;
+      },
       logout() {
         setStoredToken(null);
         setUser(null);

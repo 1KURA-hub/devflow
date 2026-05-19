@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Code2, Filter, Image, Link2, Plus, Search, Vote } from "lucide-react";
-import { NavLink, useOutletContext } from "react-router-dom";
+import { Link, NavLink, useOutletContext } from "react-router-dom";
 import { api } from "../api/client";
+import { Avatar } from "../components/Avatar";
 import { FeedList } from "../components/FeedList";
 import { useAuth } from "../state/auth";
 
@@ -22,7 +23,7 @@ const feedTabs = [
 
 export function FeedPage({ mode }) {
   const { user } = useAuth();
-  const { openComposer, richFeed, profileStats } = useOutletContext();
+  const { openComposer, richFeed, profileStats, adjustProfileStats } = useOutletContext();
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTag, setActiveTag] = useState("");
@@ -65,7 +66,7 @@ export function FeedPage({ mode }) {
       <section className="glass-panel feed-frame">
         <div className="feed-column">
           <div className="composer-strip inset-panel">
-            <span className="mini-avatar">{user ? user.nickname.slice(0, 1) : "D"}</span>
+            <Avatar user={user} label="D" className="mini-avatar" />
             <button className="composer-prompt" type="button" onClick={openComposer}>
               分享你的技术见解、经验或有趣的想法...
             </button>
@@ -150,7 +151,7 @@ export function FeedPage({ mode }) {
           </div>
 
           <section className="glass-panel user-summary">
-            <div className="profile-avatar large">{user ? user.nickname.slice(0, 1) : "L"}</div>
+            <Avatar user={user} label="L" className="profile-avatar large" />
             <div>
               <strong>{user ? user.nickname : "Lin"}</strong>
               <span>全栈开发工程师</span>
@@ -158,15 +159,21 @@ export function FeedPage({ mode }) {
             <dl>
               <div>
                 <dt>动态</dt>
-                <dd>{profileStats?.posts ?? 0}</dd>
+                <dd>
+                  <Link to={user ? `/user/${user.id}?tab=posts` : "/login"}>{profileStats?.posts ?? 0}</Link>
+                </dd>
               </div>
               <div>
                 <dt>关注</dt>
-                <dd>{profileStats?.following ?? 0}</dd>
+                <dd>
+                  <Link to={user ? `/user/${user.id}?tab=following` : "/login"}>{profileStats?.following ?? 0}</Link>
+                </dd>
               </div>
               <div>
                 <dt>粉丝</dt>
-                <dd>{profileStats?.followers ?? 0}</dd>
+                <dd>
+                  <Link to={user ? `/user/${user.id}?tab=followers` : "/login"}>{profileStats?.followers ?? 0}</Link>
+                </dd>
               </div>
             </dl>
           </section>
@@ -205,7 +212,11 @@ export function FeedPage({ mode }) {
                   <button
                     className={followed[follow.id] ? "active" : ""}
                     type="button"
-                    onClick={() => setFollowed((current) => ({ ...current, [follow.id]: !current[follow.id] }))}
+                    onClick={() => {
+                      const nextFollowed = !followed[follow.id];
+                      setFollowed((current) => ({ ...current, [follow.id]: nextFollowed }));
+                      adjustProfileStats?.({ following: nextFollowed ? 1 : -1 });
+                    }}
                   >
                     {followed[follow.id] ? "已关注" : "关注"}
                   </button>

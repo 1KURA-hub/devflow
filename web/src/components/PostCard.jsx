@@ -1,12 +1,14 @@
 import React, { useState } from "react";
-import { Bookmark, Heart, MessageCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Heart, MessageCircle, Star } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
+import { Avatar } from "./Avatar";
 import { formatDate, splitTags } from "../utils/format";
 
 export function PostCard({ post, compact = false, rich = false }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [favorited, setFavorited] = useState(false);
   const [counts, setCounts] = useState({
@@ -17,7 +19,9 @@ export function PostCard({ post, compact = false, rich = false }) {
 
   async function toggleLike(event) {
     event.preventDefault();
+    event.stopPropagation();
     if (!user) {
+      navigate("/login");
       return;
     }
     const nextLiked = !liked;
@@ -31,7 +35,9 @@ export function PostCard({ post, compact = false, rich = false }) {
 
   async function toggleFavorite(event) {
     event.preventDefault();
+    event.stopPropagation();
     if (!user) {
+      navigate("/login");
       return;
     }
     const nextFavorited = !favorited;
@@ -43,16 +49,29 @@ export function PostCard({ post, compact = false, rich = false }) {
     }));
   }
 
+  function openPost() {
+    navigate(`/post/${post.id}`);
+  }
+
+  function stopCardOpen(event) {
+    event.stopPropagation();
+  }
+
+  const author = post.author || null;
+  const authorName = author?.nickname || `作者 #${post.author_id}`;
+  const previewStyle = post.cover_url ? { backgroundImage: `url(${post.cover_url})` } : undefined;
+
   return (
-    <article className={`post-card ${compact ? "compact" : ""}`}>
-      {rich ? <div className="post-preview" aria-hidden="true" /> : null}
+    <article className={`post-card ${compact ? "compact" : ""}`} onClick={openPost}>
       <div className="post-meta">
-        <Link to={`/user/${post.author_id}`}>作者 #{post.author_id}</Link>
+        <Link className="post-author" to={`/user/${post.author_id}`} onClick={stopCardOpen}>
+          <Avatar user={author} label={authorName} className="tiny-avatar" />
+          <span>{authorName}</span>
+        </Link>
         <time>{formatDate(post.created_at)}</time>
       </div>
-      <Link className="post-title" to={`/post/${post.id}`}>
-        {post.title}
-      </Link>
+      {rich || post.cover_url ? <div className={`post-preview ${post.cover_url ? "custom-cover" : ""}`} style={previewStyle} aria-hidden="true" /> : null}
+      <h3 className="post-title">{post.title}</h3>
       <p className="post-copy">{post.content}</p>
       <div className="tag-row">
         {splitTags(post.tags).map((tag) => (
@@ -60,16 +79,16 @@ export function PostCard({ post, compact = false, rich = false }) {
         ))}
       </div>
       <footer className="post-actions">
-        <button className={liked ? "active" : ""} onClick={toggleLike} disabled={!user}>
-          <Heart size={16} />
+        <button className={liked ? "active" : ""} onClick={toggleLike}>
+          <Heart size={16} fill={liked ? "currentColor" : "none"} />
           {counts.like_count}
         </button>
-        <Link to={`/post/${post.id}`}>
+        <Link to={`/post/${post.id}`} onClick={stopCardOpen}>
           <MessageCircle size={16} />
           {counts.comment_count}
         </Link>
-        <button className={favorited ? "active" : ""} onClick={toggleFavorite} disabled={!user}>
-          <Bookmark size={16} />
+        <button className={`favorite-action ${favorited ? "active" : ""}`} onClick={toggleFavorite}>
+          <Star size={16} fill={favorited ? "currentColor" : "none"} />
           {counts.favorite_count}
         </button>
       </footer>

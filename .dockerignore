@@ -3,3 +3,4 @@
 .env.prod
 web/node_modules
 web/dist
+uploads

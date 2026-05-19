@@ -33,6 +33,7 @@ type CreatePostInput struct {
 	Title    string
 	Content  string
 	Tags     string
+	CoverURL string
 }
 
 type ListInput struct {
@@ -62,10 +63,11 @@ func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model
 	title := strings.TrimSpace(input.Title)
 	content := strings.TrimSpace(input.Content)
 	tags := normalizeTags(input.Tags)
+	coverURL := strings.TrimSpace(input.CoverURL)
 	if input.AuthorID == 0 || title == "" || content == "" {
 		return nil, ErrInvalidInput
 	}
-	if utf8.RuneCountInString(title) > 120 || utf8.RuneCountInString(content) > 5000 || utf8.RuneCountInString(tags) > 255 {
+	if utf8.RuneCountInString(title) > 120 || utf8.RuneCountInString(content) > 5000 || utf8.RuneCountInString(tags) > 255 || utf8.RuneCountInString(coverURL) > 512 {
 		return nil, ErrInvalidInput
 	}
 	if _, err := s.users.FindByID(ctx, input.AuthorID); err != nil {
@@ -77,6 +79,7 @@ func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model
 		Title:    title,
 		Content:  content,
 		Tags:     tags,
+		CoverURL: coverURL,
 		Status:   1,
 	}
 	if err := s.posts.Create(ctx, post); err != nil {

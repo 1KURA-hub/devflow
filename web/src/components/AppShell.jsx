@@ -17,6 +17,7 @@ import {
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
+import { Avatar } from "./Avatar";
 import { Brand } from "./Brand";
 import { ComposerModal } from "./ComposerModal";
 
@@ -24,11 +25,12 @@ const backgroundKey = "devflow_background_image";
 const maxBackgroundSize = 4 * 1024 * 1024;
 
 export function AppShell() {
-  const { user } = useAuth();
+  const { user, updateMe, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [composerOpen, setComposerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState(() => localStorage.getItem(backgroundKey) || "");
   const [backgroundError, setBackgroundError] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
@@ -89,7 +91,48 @@ export function AppShell() {
     return () => {
       active = false;
     };
+  }, [location.pathname, user]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (!user) {
+        return;
+      }
+      Promise.all([
+        api.userPosts(user.id, { limit: 50 }),
+        api.followingUsers(user.id, { limit: 50 }),
+        api.followers(user.id, { limit: 50 })
+      ])
+        .then(([posts, following, followers]) => {
+          setProfileStats({
+            posts: posts.items.length,
+            following: following.items.length,
+            followers: followers.items.length
+          });
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("devflow:profile-stats-refresh", refresh);
+    window.addEventListener("devflow:post-created", refresh);
+    return () => {
+      window.removeEventListener("devflow:profile-stats-refresh", refresh);
+      window.removeEventListener("devflow:post-created", refresh);
+    };
   }, [user]);
+
+  useEffect(() => {
+    let timer;
+    const celebrate = () => {
+      setCelebrating(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setCelebrating(false), 1300);
+    };
+    window.addEventListener("devflow:celebrate", celebrate);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("devflow:celebrate", celebrate);
+    };
+  }, []);
 
   function openComposer() {
     if (user) {
@@ -97,6 +140,14 @@ export function AppShell() {
       return;
     }
     navigate("/login");
+  }
+
+  function adjustProfileStats(delta) {
+    setProfileStats((current) => ({
+      posts: current.posts + (delta.posts || 0),
+      following: Math.max(0, current.following + (delta.following || 0)),
+      followers: Math.max(0, current.followers + (delta.followers || 0))
+    }));
   }
 
   function changeBackground(event) {
@@ -133,6 +184,27 @@ export function AppShell() {
     setBackgroundImage("");
     setBackgroundError("");
     localStorage.removeItem(backgroundKey);
+  }
+
+  async function changeAvatar(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    setBackgroundError("");
+    if (!file) {
+      return;
+    }
+    try {
+      const result = await api.uploadImage(file);
+      await updateMe({ avatar_url: result.url });
+    } catch (error) {
+      setBackgroundError(error.message);
+    }
+  }
+
+  function logoutAndClose() {
+    logout();
+    setSettingsOpen(false);
+    navigate("/login");
   }
 
   return (
@@ -177,7 +249,7 @@ export function AppShell() {
           <section className="sidebar-profile">
             {user ? (
               <>
-                <div className="profile-avatar">{user.nickname.slice(0, 1)}</div>
+                <Avatar user={user} />
                 <div className="sidebar-profile-main">
                   <strong>{user.nickname}</strong>
                   <span>全栈开发工程师</span>
@@ -186,23 +258,23 @@ export function AppShell() {
                   <Settings size={16} />
                 </button>
                 <div className="sidebar-profile-stats">
-                  <span>
+                  <button type="button" onClick={() => navigate(`/user/${user.id}?tab=posts`)}>
                     <strong>{profileStats.posts}</strong>
                     动态
-                  </span>
-                  <span>
+                  </button>
+                  <button type="button" onClick={() => navigate(`/user/${user.id}?tab=following`)}>
                     <strong>{profileStats.following}</strong>
                     关注
-                  </span>
-                  <span>
+                  </button>
+                  <button type="button" onClick={() => navigate(`/user/${user.id}?tab=followers`)}>
                     <strong>{profileStats.followers}</strong>
                     粉丝
-                  </span>
+                  </button>
                 </div>
               </>
             ) : (
               <>
-                <div className="profile-avatar">D</div>
+                <Avatar label="D" />
                 <div className="sidebar-profile-main">
                   <strong>访客模式</strong>
                   <span>登录后同步你的动态</span>
@@ -217,7 +289,7 @@ export function AppShell() {
 
         <div className="workspace">
           <main className="page-shell">
-            <Outlet context={{ openComposer, richFeed, profileStats }} />
+            <Outlet context={{ openComposer, richFeed, profileStats, adjustProfileStats }} />
           </main>
         </div>
 
@@ -247,6 +319,20 @@ export function AppShell() {
               <p className="eyebrow">界面设置</p>
               <h2>调整首页显示方式</h2>
             </div>
+            {user ? (
+              <div className="setting-row background-control">
+                <span>
+                  <strong>个人头像</strong>
+                  <em>{user.avatar_url ? "已使用自定义头像" : "上传一张头像图片"}</em>
+                </span>
+                <div>
+                  <label className="icon-command background-upload" aria-label="上传头像">
+                    <Upload size={17} />
+                    <input type="file" accept="image/*" onChange={changeAvatar} />
+                  </label>
+                </div>
+              </div>
+            ) : null}
             <button className="setting-row" type="button" onClick={() => setDarkTheme((value) => !value)}>
               <span>
                 <strong>主题模式</strong>
@@ -277,7 +363,22 @@ export function AppShell() {
               </div>
             </div>
             {backgroundError ? <p className="form-error">{backgroundError}</p> : null}
+            {user ? (
+              <button className="setting-row danger-row" type="button" onClick={logoutAndClose}>
+                <span>
+                  <strong>退出账号</strong>
+                  <em>清除当前登录状态并返回登录页</em>
+                </span>
+              </button>
+            ) : null}
           </section>
+        </div>
+      ) : null}
+      {celebrating ? (
+        <div className="celebration-burst" aria-hidden="true">
+          {Array.from({ length: 18 }, (_, index) => (
+            <span key={index} style={{ "--i": index }} />
+          ))}
         </div>
       ) : null}
       {user ? <ComposerModal open={composerOpen} onClose={() => setComposerOpen(false)} /> : null}

@@ -55,6 +55,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    volumes:
+      - devflow_prod_uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 10s
@@ -90,3 +92,4 @@ volumes:
   devflow_prod_mysql_data:
   devflow_prod_redis_data:
   devflow_prod_rabbitmq_data:
+  devflow_prod_uploads:

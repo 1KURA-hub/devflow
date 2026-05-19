@@ -1,30 +1,34 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
+import { Avatar } from "../components/Avatar";
 import { FeedList } from "../components/FeedList";
 import { useAuth } from "../state/auth";
 
 export function ProfilePage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [lists, setLists] = useState({ followers: [], following: [] });
-  const [activeTab, setActiveTab] = useState("posts");
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "posts");
+  const [postAuthor, setPostAuthor] = useState(null);
   const [followed, setFollowed] = useState(false);
   const loader = useCallback((params) => api.userPosts(id, params), [id]);
   const profileUser = useMemo(() => {
     if (user && String(user.id) === id) {
       return user;
     }
-    return [...lists.followers, ...lists.following].find((item) => String(item.id) === id) || null;
-  }, [id, lists.followers, lists.following, user]);
+    return postAuthor || [...lists.followers, ...lists.following].find((item) => String(item.id) === id) || null;
+  }, [id, lists.followers, lists.following, postAuthor, user]);
   const profileName = profileUser?.nickname || `用户 #${id}`;
   const profileBio = profileUser?.bio || "记录公开的工程进展与技术动态。";
 
   useEffect(() => {
-    setActiveTab("posts");
+    setActiveTab(searchParams.get("tab") || "posts");
     Promise.all([api.userPosts(id, { limit: 50 }), api.followers(id, { limit: 50 }), api.followingUsers(id, { limit: 50 })])
       .then(([posts, followers, following]) => {
+        setPostAuthor(posts.items[0]?.author || null);
         setStats({
           posts: posts.items.length,
           followers: followers.items.length,
@@ -36,10 +40,11 @@ export function ProfilePage() {
         });
       })
       .catch(() => {
+        setPostAuthor(null);
         setStats({ posts: 0, followers: 0, following: 0 });
         setLists({ followers: [], following: [] });
       });
-  }, [id]);
+  }, [id, searchParams]);
 
   async function toggleFollow() {
     if (followed) {
@@ -52,12 +57,13 @@ export function ProfilePage() {
       ...current,
       followers: current.followers + (followed ? -1 : 1)
     }));
+    window.dispatchEvent(new CustomEvent("devflow:profile-stats-refresh"));
   }
 
   return (
     <div className="profile-layout">
       <section className="surface profile-header">
-        <div className="avatar">{profileName.slice(0, 1)}</div>
+        <Avatar user={profileUser} label={profileName} className="avatar" />
         <div>
           <p className="eyebrow">开发者主页</p>
           <h1>{profileName}</h1>
@@ -106,7 +112,7 @@ function UserList({ items, emptyText }) {
     <div className="surface user-list-panel">
       {items.map((item) => (
         <Link className="user-list-item" key={item.id} to={`/user/${item.id}`}>
-          <div className="profile-avatar">{item.nickname.slice(0, 1)}</div>
+          <Avatar user={item} className="profile-avatar" />
           <div>
             <strong>{item.nickname}</strong>
             <span>{item.bio || "这个开发者还没有填写简介。"}</span>

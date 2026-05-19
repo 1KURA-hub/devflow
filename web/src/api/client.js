@@ -14,8 +14,9 @@ export function setStoredToken(token) {
 
 async function request(path, options = {}) {
   const token = getStoredToken();
+  const isFormData = options.body instanceof FormData;
   const headers = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers || {})
   };
   if (token) {
@@ -45,6 +46,19 @@ export const api = {
       body: JSON.stringify(body)
     }),
   me: () => request("/api/me"),
+  updateMe: (body) =>
+    request("/api/me", {
+      method: "PATCH",
+      body: JSON.stringify(body)
+    }),
+  uploadImage: (file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request("/api/uploads/image", {
+      method: "POST",
+      body: form
+    });
+  },
   latestFeed: (params) => request(`/api/feed/latest${query(params)}`),
   hotFeed: (params) => request(`/api/feed/hot${query(params)}`),
   followingFeed: (params) => request(`/api/feed/following${query(params)}`),
