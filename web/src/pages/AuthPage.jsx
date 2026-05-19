@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ArrowRight, LockKeyhole, Sparkles, UserRound } from "lucide-react";
 import { Navigate, Link, useNavigate } from "react-router-dom";
 import banner from "../assets/devflow-banner.jpg";
 import { useAuth } from "../state/auth";
@@ -36,50 +37,76 @@ export function AuthPage({ mode }) {
   return (
     <div className="auth-shell">
       <section className="auth-story">
-        <Brand />
-        <div>
-          <p className="eyebrow">程序员技术动态社区</p>
-          <h1>把零散的工程进展，沉淀成可讨论的动态。</h1>
+        <div className="auth-story-panel glass-panel">
+          <Brand />
+          <div>
+            <p className="eyebrow">程序员技术动态社区</p>
+            <h1>把每天的工程进展，沉淀成可讨论的技术动态。</h1>
+          </div>
+          <div className="auth-preview-card">
+            <img src={banner} alt="" />
+            <div>
+              <span>DevFlow</span>
+              <strong>工程动态正在同步</strong>
+            </div>
+          </div>
+          <div className="auth-proof-row" aria-label="核心状态">
+            <span>动态发布</span>
+            <span>关注流</span>
+            <span>评论通知</span>
+          </div>
         </div>
-        <img src={banner} alt="" />
       </section>
       <form className="auth-form surface" onSubmit={submit}>
-        <div>
+        <div className="auth-form-header">
+          <span className="auth-form-icon">
+            <Sparkles size={18} />
+          </span>
           <p className="eyebrow">{mode === "register" ? "创建账号" : "欢迎回来"}</p>
           <h2>{mode === "register" ? "注册 DevFlow" : "登录 DevFlow"}</h2>
         </div>
-        <label>
+        <label className="auth-field">
           用户名
-          <input
-            value={form.username}
-            onChange={(event) => setForm({ ...form, username: event.target.value })}
-            required
-          />
-        </label>
-        {mode === "register" ? (
-          <label>
-            昵称
+          <span>
+            <UserRound size={17} />
             <input
-              value={form.nickname}
-              onChange={(event) => setForm({ ...form, nickname: event.target.value })}
+              value={form.username}
+              onChange={(event) => setForm({ ...form, username: event.target.value })}
               required
             />
+          </span>
+        </label>
+        {mode === "register" ? (
+          <label className="auth-field">
+            昵称
+            <span>
+              <UserRound size={17} />
+              <input
+                value={form.nickname}
+                onChange={(event) => setForm({ ...form, nickname: event.target.value })}
+                required
+              />
+            </span>
           </label>
         ) : null}
-        <label>
+        <label className="auth-field">
           密码
-          <input
-            type="password"
-            value={form.password}
-            onChange={(event) => setForm({ ...form, password: event.target.value })}
-            required
-          />
+          <span>
+            <LockKeyhole size={17} />
+            <input
+              type="password"
+              value={form.password}
+              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              required
+            />
+          </span>
         </label>
         {error ? <p className="form-error">{error}</p> : null}
-        <button className="primary-button" disabled={submitting}>
+        <button className="primary-button auth-submit" disabled={submitting}>
           {submitting ? "处理中..." : mode === "register" ? "注册" : "登录"}
+          <ArrowRight size={17} />
         </button>
-        <p className="muted-copy">
+        <p className="muted-copy auth-switch">
           {mode === "register" ? "已有账号？" : "还没有账号？"}
           <Link to={mode === "register" ? "/login" : "/register"}>
             {mode === "register" ? "去登录" : "去注册"}
