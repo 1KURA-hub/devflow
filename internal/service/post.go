@@ -117,6 +117,24 @@ func (s *PostService) Get(ctx context.Context, id uint64) (*model.Post, error) {
 	return s.posts.FindByID(ctx, id)
 }
 
+func (s *PostService) Delete(ctx context.Context, userID, postID uint64) error {
+	if userID == 0 || postID == 0 {
+		return ErrInvalidInput
+	}
+	post, err := s.posts.FindByID(ctx, postID)
+	if err != nil {
+		return err
+	}
+	if post.AuthorID != userID {
+		return ErrForbidden
+	}
+	if err := s.posts.DeleteByID(ctx, postID); err != nil {
+		return err
+	}
+	_ = s.hotPosts.SetScore(ctx, postID, 0)
+	return nil
+}
+
 func (s *PostService) ListLatest(ctx context.Context, input ListInput) (*PostListResult, error) {
 	limit := normalizeLimit(input.Limit)
 	posts, err := s.posts.ListLatest(ctx, input.Cursor, limit+1)

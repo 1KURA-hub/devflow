@@ -13,6 +13,7 @@ import (
 
 var (
 	ErrInvalidInput      = errors.New("invalid input")
+	ErrForbidden         = errors.New("forbidden")
 	ErrUsernameTaken     = errors.New("username already exists")
 	ErrInvalidCredential = errors.New("invalid username or password")
 )

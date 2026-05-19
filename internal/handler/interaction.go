@@ -80,7 +80,7 @@ func (a *App) listMyFavorites(c *gin.Context) {
 		writeInteractionError(c, err)
 		return
 	}
-	response.OK(c, result)
+	a.writePostList(c, result)
 }
 
 func currentUserAndPostID(c *gin.Context) (uint64, uint64, bool) {

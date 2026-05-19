@@ -154,7 +154,7 @@ export function FeedPage({ mode }) {
             <Avatar user={user} label="L" className="profile-avatar large" />
             <div>
               <strong>{user ? user.nickname : "Lin"}</strong>
-              <span>全栈开发工程师</span>
+              <span>{user ? user.bio || "还没有填写简介" : "登录后同步你的动态"}</span>
             </div>
             <dl>
               <div>

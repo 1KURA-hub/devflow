@@ -1,21 +1,32 @@
-import React, { useState } from "react";
-import { Heart, MessageCircle, Star } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Heart, MessageCircle, Star, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
 import { Avatar } from "./Avatar";
 import { formatDate, splitTags } from "../utils/format";
 
-export function PostCard({ post, compact = false, rich = false }) {
+export function PostCard({ post, compact = false, rich = false, onDeleted }) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
-  const [favorited, setFavorited] = useState(false);
+  const [liked, setLiked] = useState(Boolean(post.liked));
+  const [favorited, setFavorited] = useState(Boolean(post.favorited));
+  const [deleting, setDeleting] = useState(false);
   const [counts, setCounts] = useState({
     like_count: post.like_count,
     favorite_count: post.favorite_count,
     comment_count: post.comment_count
   });
+
+  useEffect(() => {
+    setLiked(Boolean(post.liked));
+    setFavorited(Boolean(post.favorited));
+    setCounts({
+      like_count: post.like_count,
+      favorite_count: post.favorite_count,
+      comment_count: post.comment_count
+    });
+  }, [post]);
 
   async function toggleLike(event) {
     event.preventDefault();
@@ -29,7 +40,7 @@ export function PostCard({ post, compact = false, rich = false }) {
     setLiked(nextLiked);
     setCounts((current) => ({
       ...current,
-      like_count: current.like_count + (nextLiked ? 1 : -1)
+      like_count: Math.max(0, current.like_count + (nextLiked ? 1 : -1))
     }));
   }
 
@@ -45,8 +56,29 @@ export function PostCard({ post, compact = false, rich = false }) {
     setFavorited(nextFavorited);
     setCounts((current) => ({
       ...current,
-      favorite_count: current.favorite_count + (nextFavorited ? 1 : -1)
+      favorite_count: Math.max(0, current.favorite_count + (nextFavorited ? 1 : -1))
     }));
+  }
+
+  async function deletePost(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!user || user.id !== post.author_id || deleting) {
+      return;
+    }
+    if (!window.confirm("确定删除这条动态吗？")) {
+      return;
+    }
+    setDeleting(true);
+    try {
+      await api.deletePost(post.id);
+      window.dispatchEvent(new Event("devflow:profile-stats-refresh"));
+      onDeleted?.(post.id);
+    } catch (error) {
+      window.alert(error.message);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function openPost() {
@@ -59,6 +91,7 @@ export function PostCard({ post, compact = false, rich = false }) {
 
   const author = post.author || null;
   const authorName = author?.nickname || `作者 #${post.author_id}`;
+  const canDelete = user?.id === post.author_id;
 
   return (
     <article className={`post-card ${compact ? "compact" : ""}`} onClick={openPost}>
@@ -90,6 +123,11 @@ export function PostCard({ post, compact = false, rich = false }) {
           <Star size={16} fill={favorited ? "currentColor" : "none"} />
           {counts.favorite_count}
         </button>
+        {canDelete ? (
+          <button className="delete-action" onClick={deletePost} disabled={deleting} aria-label="删除动态">
+            <Trash2 size={16} />
+          </button>
+        ) : null}
       </footer>
     </article>
   );

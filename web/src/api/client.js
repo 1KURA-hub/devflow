@@ -68,6 +68,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body)
     }),
+  deletePost: (id) => request(`/api/posts/${id}`, { method: "DELETE" }),
   userPosts: (id, params) => request(`/api/users/${id}/posts${query(params)}`),
   followers: (id, params) => request(`/api/users/${id}/followers${query(params)}`),
   followingUsers: (id, params) => request(`/api/users/${id}/following${query(params)}`),

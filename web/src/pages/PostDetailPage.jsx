@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { PostCard } from "../components/PostCard";
 import { useAuth } from "../state/auth";
@@ -7,6 +7,7 @@ import { formatDate } from "../utils/format";
 
 export function PostDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -39,7 +40,7 @@ export function PostDetailPage() {
   return (
     <div className="detail-layout">
       <section className="main-column">
-        <PostCard post={post} />
+        <PostCard post={post} onDeleted={() => navigate("/")} />
         <section className="surface comments-panel">
           <header>
             <p className="eyebrow">评论</p>

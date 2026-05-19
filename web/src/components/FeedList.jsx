@@ -56,6 +56,13 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich =
     }));
   }
 
+  function removePost(postID) {
+    setState((current) => ({
+      ...current,
+      items: current.items.filter((post) => post.id !== postID)
+    }));
+  }
+
   if (state.loading) {
     return <div className="surface state-box">正在载入动态...</div>;
   }
@@ -73,7 +80,7 @@ export function FeedList({ loader, refreshKey = 0, emptyTitle, emptyText, rich =
   return (
     <div className="feed-stack">
       {filteredItems.map((post) => (
-        <PostCard key={post.id} post={post} rich={rich} />
+        <PostCard key={post.id} post={post} rich={rich} onDeleted={removePost} />
       ))}
       {state.hasMore ? (
         <button className="ghost-button load-more" onClick={loadMore}>

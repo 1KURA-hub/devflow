@@ -38,6 +38,7 @@ func NewRouter(app *App) *gin.Engine {
 			authenticated.PATCH("/me", app.updateMe)
 			authenticated.POST("/uploads/image", app.uploadImage)
 			authenticated.POST("/posts", app.createPost)
+			authenticated.DELETE("/posts/:id", app.deletePost)
 			authenticated.POST("/users/:id/follow", app.followUser)
 			authenticated.DELETE("/users/:id/follow", app.unfollowUser)
 			authenticated.GET("/feed/following", app.listFollowingFeed)

@@ -22,6 +22,20 @@ func (r *PostRepository) Create(ctx context.Context, post *model.Post) error {
 	return r.db.WithContext(ctx).Create(post).Error
 }
 
+func (r *PostRepository) DeleteByID(ctx context.Context, id uint64) error {
+	result := r.db.WithContext(ctx).
+		Model(&model.Post{}).
+		Where("id = ? AND status = ?", id, 1).
+		Update("status", 0)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (r *PostRepository) FindByID(ctx context.Context, id uint64) (*model.Post, error) {
 	var post model.Post
 	if err := r.db.WithContext(ctx).

@@ -78,6 +78,7 @@ export function AppShell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [darkTheme, setDarkTheme] = useState(false);
   const [richFeed, setRichFeed] = useState(false);
+  const [profileBioDraft, setProfileBioDraft] = useState("");
   const [profileStats, setProfileStats] = useState({ posts: 0, following: 0, followers: 0 });
 
   useEffect(() => {
@@ -101,6 +102,10 @@ export function AppShell() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    setProfileBioDraft(user?.bio || "");
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -274,6 +279,16 @@ export function AppShell() {
     }
   }
 
+  async function saveProfileBio(event) {
+    event.preventDefault();
+    setBackgroundError("");
+    try {
+      await updateMe({ bio: profileBioDraft });
+    } catch (error) {
+      setBackgroundError(error.message);
+    }
+  }
+
   function logoutAndClose() {
     logout();
     setSettingsOpen(false);
@@ -325,7 +340,7 @@ export function AppShell() {
                 <Avatar user={user} />
                 <div className="sidebar-profile-main">
                   <strong>{user.nickname}</strong>
-                  <span>全栈开发工程师</span>
+                  <span>{user.bio || "还没有填写简介"}</span>
                 </div>
                 <button type="button" onClick={() => setSettingsOpen(true)} aria-label="设置">
                   <Settings size={16} />
@@ -392,6 +407,23 @@ export function AppShell() {
               <p className="eyebrow">界面设置</p>
               <h2>调整首页显示方式</h2>
             </div>
+            {user ? (
+              <form className="setting-row bio-setting" onSubmit={saveProfileBio}>
+                <span>
+                  <strong>个人简介</strong>
+                  <em>展示在首页和个人资料卡片里</em>
+                </span>
+                <input
+                  value={profileBioDraft}
+                  onChange={(event) => setProfileBioDraft(event.target.value)}
+                  maxLength={255}
+                  placeholder="写一句你的技术方向"
+                />
+                <button className="primary-button" type="submit">
+                  保存
+                </button>
+              </form>
+            ) : null}
             {user ? (
               <div className="setting-row background-control">
                 <span>

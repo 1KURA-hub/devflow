@@ -17,9 +17,9 @@
   --radius-sm: 14px;
   --shell-max: 1560px;
   --shell-pad: 28px;
-  --shell-gap: clamp(18px, 1.6vw, 28px);
-  --sidebar-col: clamp(220px, 17vw, 268px);
-  --rail-col: clamp(278px, 23vw, 360px);
+  --shell-gap: clamp(14px, 1.3vw, 24px);
+  --sidebar-col: clamp(196px, 15vw, 268px);
+  --rail-col: clamp(252px, 21vw, 340px);
 }
 
 * {
@@ -27,16 +27,21 @@
 }
 
 html {
-  min-height: 100%;
+  height: 100%;
   background: #dbe9f6;
 }
 
 body {
-  min-height: 100vh;
+  height: 100%;
   margin: 0;
+  overflow: hidden;
   color: var(--ink);
   font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", sans-serif;
   letter-spacing: 0;
+}
+
+#root {
+  height: 100%;
 }
 
 a {
@@ -56,7 +61,7 @@ button {
 
 .app-shell {
   position: relative;
-  min-height: 100vh;
+  height: 100vh;
   overflow-x: hidden;
   overflow-y: auto;
   background:
@@ -76,7 +81,7 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
-  width: min(var(--shell-max), calc(100vw - 56px));
+  width: min(var(--shell-max), calc(100vw - 40px));
   min-height: 100vh;
   margin: 0 auto;
   grid-template-columns: var(--sidebar-col) minmax(0, 1fr);
@@ -89,7 +94,7 @@ button {
 .surface {
   animation: glass-rise 520ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   border: 1px solid var(--line);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(239, 247, 255, 0.94));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(239, 247, 255, 0.78));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.96),
     var(--shadow);
@@ -100,7 +105,7 @@ button {
 .glass-pill {
   animation: glass-pop 480ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   border: 1px solid var(--line);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(239, 247, 255, 0.88));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(239, 247, 255, 0.76));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.92),
     var(--shadow);
@@ -132,11 +137,14 @@ button {
 }
 
 .sidebar {
-  position: sticky;
-  top: 28px;
+  position: fixed;
+  top: var(--shell-pad);
+  left: max(20px, calc((100vw - var(--shell-max)) / 2));
+  z-index: 8;
   display: grid;
   align-self: start;
   gap: 24px;
+  width: var(--sidebar-col);
   min-height: 0;
   height: calc(100vh - 156px);
   padding: 26px 20px 24px;
@@ -239,7 +247,7 @@ button {
   margin-top: auto;
   padding: 18px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.82);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
     0 12px 26px rgba(29, 55, 90, 0.08);
@@ -444,7 +452,7 @@ button {
   display: grid;
   width: 100%;
   min-height: 0;
-  grid-template-columns: minmax(420px, 1fr) var(--rail-col);
+  grid-template-columns: minmax(360px, 1fr) var(--rail-col);
   justify-content: space-between;
   gap: var(--shell-gap);
 }
@@ -634,7 +642,7 @@ button {
   gap: 10px;
   padding: 16px 18px;
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.94));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(238, 246, 255, 0.74));
   border: 1px solid var(--line);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -646,7 +654,7 @@ button {
 
 .post-card:hover {
   transform: translateY(-2px);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.9));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(238, 246, 255, 0.78));
 }
 
 .post-preview {
@@ -744,6 +752,15 @@ button {
 
 .post-actions .favorite-action.active {
   color: #e5a900;
+}
+
+.post-actions .delete-action {
+  color: rgba(183, 53, 66, 0.78);
+}
+
+.post-actions .delete-action:disabled {
+  cursor: wait;
+  opacity: 0.48;
 }
 
 .post-actions button:hover,
@@ -921,7 +938,7 @@ button {
 .sidebar-utilities {
   position: fixed;
   bottom: 30px;
-  left: max(43px, calc((100vw - var(--shell-max)) / 2 + 15px));
+  left: max(35px, calc((100vw - var(--shell-max)) / 2 + 15px));
   z-index: 10;
   display: flex;
   align-items: center;
@@ -1098,6 +1115,27 @@ button {
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
+}
+
+.bio-setting {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr) auto;
+}
+
+.bio-setting input {
+  min-width: 0;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+  padding: 0 12px;
+  color: var(--ink);
+  outline: none;
+}
+
+.bio-setting .primary-button {
+  min-height: 40px;
+  white-space: nowrap;
 }
 
 .background-control > div {
@@ -1549,7 +1587,7 @@ textarea:focus {
 .theme-dark .settings-modal,
 .theme-dark .composer-modal {
   border-color: rgba(255, 255, 255, 0.18);
-  background: linear-gradient(145deg, rgba(15, 23, 36, 0.96), rgba(8, 13, 22, 0.9));
+  background: linear-gradient(145deg, rgba(15, 23, 36, 0.88), rgba(8, 13, 22, 0.76));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     var(--shadow);
@@ -1565,7 +1603,7 @@ textarea:focus {
 .theme-dark .add-pill,
 .theme-dark .sidebar-utilities {
   border-color: rgba(255, 255, 255, 0.16);
-  background: linear-gradient(145deg, rgba(20, 30, 46, 0.94), rgba(8, 13, 22, 0.86));
+  background: linear-gradient(145deg, rgba(20, 30, 46, 0.86), rgba(8, 13, 22, 0.74));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     var(--shadow-soft);
@@ -1653,6 +1691,11 @@ textarea:focus {
   color: var(--ink);
 }
 
+.theme-dark .bio-setting input {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+}
+
 .theme-dark .sidebar-profile > button,
 .theme-dark .sidebar-utilities button,
 .theme-dark .composer-strip div button,
@@ -1711,6 +1754,18 @@ textarea:focus {
   color: #fff;
 }
 
+.theme-dark .post-actions button.active {
+  color: #ff667f;
+}
+
+.theme-dark .post-actions .favorite-action.active {
+  color: #ffd24a;
+}
+
+.theme-dark .post-actions .delete-action {
+  color: #ff8b9a;
+}
+
 .theme-dark .dashboard-rail .glass-panel,
 .theme-dark .dashboard-rail .user-summary,
 .theme-dark .dashboard-rail .rail-card {
@@ -1730,7 +1785,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 900px) {
   .app-shell {
     height: auto;
     min-height: 100vh;

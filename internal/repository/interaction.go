@@ -108,3 +108,41 @@ func (r *InteractionRepository) RemoveFavorite(ctx context.Context, userID, post
 	})
 	return deleted, err
 }
+
+func (r *InteractionRepository) LikedPostIDs(ctx context.Context, userID uint64, postIDs []uint64) (map[uint64]bool, error) {
+	result := make(map[uint64]bool, len(postIDs))
+	if userID == 0 || len(postIDs) == 0 {
+		return result, nil
+	}
+
+	var likes []model.Like
+	if err := r.db.WithContext(ctx).
+		Select("post_id").
+		Where("user_id = ? AND post_id IN ?", userID, postIDs).
+		Find(&likes).Error; err != nil {
+		return nil, err
+	}
+	for _, like := range likes {
+		result[like.PostID] = true
+	}
+	return result, nil
+}
+
+func (r *InteractionRepository) FavoritedPostIDs(ctx context.Context, userID uint64, postIDs []uint64) (map[uint64]bool, error) {
+	result := make(map[uint64]bool, len(postIDs))
+	if userID == 0 || len(postIDs) == 0 {
+		return result, nil
+	}
+
+	var favorites []model.Favorite
+	if err := r.db.WithContext(ctx).
+		Select("post_id").
+		Where("user_id = ? AND post_id IN ?", userID, postIDs).
+		Find(&favorites).Error; err != nil {
+		return nil, err
+	}
+	for _, favorite := range favorites {
+		result[favorite.PostID] = true
+	}
+	return result, nil
+}

@@ -108,7 +108,7 @@ func (a *App) listFollowingFeed(c *gin.Context) {
 		writeFollowError(c, err)
 		return
 	}
-	response.OK(c, result)
+	a.writePostList(c, result)
 }
 
 func parseUserListQuery(c *gin.Context) (service.UserListInput, error) {

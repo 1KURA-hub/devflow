@@ -124,3 +124,21 @@ func (s *InteractionService) ListMyFavorites(ctx context.Context, userID uint64,
 	}
 	return buildPostListResult(posts, limit), nil
 }
+
+func (s *InteractionService) PostStates(ctx context.Context, userID uint64, postIDs []uint64) (map[uint64]bool, map[uint64]bool, error) {
+	liked := make(map[uint64]bool, len(postIDs))
+	favorited := make(map[uint64]bool, len(postIDs))
+	if userID == 0 || len(postIDs) == 0 {
+		return liked, favorited, nil
+	}
+
+	liked, err := s.interactions.LikedPostIDs(ctx, userID, postIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	favorited, err = s.interactions.FavoritedPostIDs(ctx, userID, postIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return liked, favorited, nil
+}
