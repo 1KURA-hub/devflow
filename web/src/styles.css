@@ -2,15 +2,15 @@
   color-scheme: light;
   --ink: #16233d;
   --muted: rgba(22, 35, 61, 0.62);
-  --line: rgba(255, 255, 255, 0.62);
-  --line-soft: rgba(255, 255, 255, 0.4);
+  --line: rgba(255, 255, 255, 0.72);
+  --line-soft: rgba(255, 255, 255, 0.52);
   --accent: #2c63e6;
   --accent-soft: rgba(44, 99, 230, 0.14);
-  --glass: rgba(247, 251, 255, 0.52);
-  --glass-strong: rgba(248, 251, 255, 0.64);
-  --glass-muted: rgba(239, 246, 252, 0.4);
-  --shadow: 0 22px 60px rgba(29, 55, 90, 0.16);
-  --shadow-soft: 0 12px 30px rgba(29, 55, 90, 0.1);
+  --glass: rgba(247, 251, 255, 0.68);
+  --glass-strong: rgba(248, 251, 255, 0.76);
+  --glass-muted: rgba(239, 246, 252, 0.54);
+  --shadow: 0 22px 60px rgba(29, 55, 90, 0.18);
+  --shadow-soft: 0 12px 30px rgba(29, 55, 90, 0.12);
   --radius-xl: 30px;
   --radius-lg: 24px;
   --radius-md: 18px;
@@ -82,7 +82,7 @@ button {
 .glass-pill,
 .surface {
   border: 1px solid var(--line);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(239, 247, 255, 0.4));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(239, 247, 255, 0.58));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
     var(--shadow);
@@ -157,7 +157,7 @@ button {
 }
 
 .sidebar-nav a.active {
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.68);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
   color: var(--accent);
 }
@@ -186,7 +186,7 @@ button {
   margin-top: 6px;
   padding: 18px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.44);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
 }
 
@@ -197,7 +197,7 @@ button {
   place-items: center;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.5);
   color: rgba(22, 35, 61, 0.72);
 }
 
@@ -296,7 +296,7 @@ button {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.64);
   border-radius: 18px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(237, 245, 252, 0.38));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(237, 245, 252, 0.54));
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -343,7 +343,7 @@ button {
 
 .inset-panel {
   border: 1px solid rgba(255, 255, 255, 0.54);
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.48);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(18px) saturate(135%);
   -webkit-backdrop-filter: blur(18px) saturate(135%);
@@ -443,7 +443,7 @@ button {
   gap: 10px;
   padding: 16px 18px;
   border-radius: 20px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(238, 246, 255, 0.38));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(238, 246, 255, 0.56));
   border: 1px solid var(--line);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.84),
@@ -455,7 +455,7 @@ button {
 
 .post-card:hover {
   transform: translateY(-2px);
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(238, 246, 255, 0.46));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(238, 246, 255, 0.64));
 }
 
 .post-preview {
@@ -508,7 +508,7 @@ button {
 .topic-grid span {
   border: 1px solid rgba(255, 255, 255, 0.46);
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.52);
   padding: 5px 10px;
   color: rgba(22, 35, 61, 0.72);
   font-size: 12px;
@@ -632,7 +632,7 @@ button {
   min-height: 30px;
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.56);
   color: var(--accent);
   font-size: 12px;
 }
@@ -677,7 +677,7 @@ button {
   min-height: 58px;
   justify-content: space-between;
   padding: 6px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(236, 245, 252, 0.4));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(236, 245, 252, 0.56));
 }
 
 .sidebar-utilities button {
