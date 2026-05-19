@@ -31,6 +31,12 @@ export function FeedPage({ mode }) {
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [followPage, setFollowPage] = useState(0);
   const [followed, setFollowed] = useState({});
+  const [overview, setOverview] = useState({
+    total_users: 0,
+    total_posts: 0,
+    today_users: 0,
+    today_posts: 0
+  });
   const loader = useCallback(
     (params) => {
       if (mode === "hot") {
@@ -49,6 +55,21 @@ export function FeedPage({ mode }) {
     window.addEventListener("devflow:post-created", refresh);
     return () => window.removeEventListener("devflow:post-created", refresh);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .communityOverview()
+      .then((result) => {
+        if (active) {
+          setOverview(result);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [refreshKey]);
 
   const visibleTopics = showAllTopics ? topics : topics.slice(0, 8);
   const suggestedFollows = useMemo(
@@ -231,12 +252,20 @@ export function FeedPage({ mode }) {
             <h2>社区概览</h2>
           </header>
           <div>
-            <strong>2,342</strong>
-            <span>今日活跃用户</span>
+            <strong>{overview.total_users}</strong>
+            <span>社区用户</span>
           </div>
           <div>
-            <strong>156</strong>
+            <strong>{overview.today_posts}</strong>
             <span>今日新增动态</span>
+          </div>
+          <div>
+            <strong>{overview.total_posts}</strong>
+            <span>动态总数</span>
+          </div>
+          <div>
+            <strong>{overview.today_users}</strong>
+            <span>今日新用户</span>
           </div>
         </section>
       </aside>

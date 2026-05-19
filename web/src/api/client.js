@@ -62,6 +62,7 @@ export const api = {
   latestFeed: (params) => request(`/api/feed/latest${query(params)}`),
   hotFeed: (params) => request(`/api/feed/hot${query(params)}`),
   followingFeed: (params) => request(`/api/feed/following${query(params)}`),
+  communityOverview: () => request("/api/community/overview"),
   getPost: (id) => request(`/api/posts/${id}`),
   createPost: (body) =>
     request("/api/posts", {

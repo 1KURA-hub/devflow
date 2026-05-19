@@ -15,11 +15,12 @@
   --radius-lg: 24px;
   --radius-md: 18px;
   --radius-sm: 14px;
-  --shell-max: 1560px;
-  --shell-pad: 28px;
-  --shell-gap: clamp(14px, 1.3vw, 24px);
-  --sidebar-col: clamp(196px, 15vw, 268px);
-  --rail-col: clamp(252px, 21vw, 340px);
+  --shell-width: 1440px;
+  --shell-height: 860px;
+  --shell-pad: 18px;
+  --shell-gap: 18px;
+  --sidebar-col: 260px;
+  --rail-col: 330px;
 }
 
 * {
@@ -62,8 +63,9 @@ button {
 .app-shell {
   position: relative;
   height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
   background:
     linear-gradient(rgba(228, 240, 250, 0.2), rgba(228, 240, 250, 0.2)),
     var(--custom-bg, url("./assets/devflow-wallpaper.jpg")) center / cover fixed;
@@ -81,13 +83,15 @@ button {
 .desktop-shell {
   position: relative;
   display: grid;
-  width: min(var(--shell-max), calc(100vw - 40px));
-  min-height: 100vh;
-  margin: 0 auto;
+  width: var(--shell-width);
+  height: var(--shell-height);
+  margin: 0;
   grid-template-columns: var(--sidebar-col) minmax(0, 1fr);
   gap: var(--shell-gap);
   padding: var(--shell-pad) 0;
   overflow: visible;
+  transform: scale(var(--app-scale, 1));
+  transform-origin: center center;
 }
 
 .glass-panel,
@@ -138,18 +142,20 @@ button {
 
 .sidebar {
   grid-column: 1;
-  position: fixed;
-  top: var(--shell-pad);
-  left: max(20px, calc((100vw - var(--shell-max)) / 2));
+  position: relative;
+  top: auto;
+  left: auto;
   z-index: 8;
   display: grid;
   align-self: start;
-  gap: 24px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 18px;
   width: var(--sidebar-col);
   min-height: 0;
-  height: calc(100vh - 156px);
-  padding: 26px 20px 24px;
+  height: calc(100% - 78px);
+  padding: 24px 18px 18px;
   border-radius: var(--radius-xl);
+  overflow: hidden;
 }
 
 .brand {
@@ -198,14 +204,17 @@ button {
 
 .sidebar-nav {
   display: grid;
-  gap: 8px;
+  align-content: start;
+  gap: 6px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sidebar-nav a {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 48px;
+  min-height: 44px;
   padding: 0 14px;
   border-radius: 16px;
   color: rgba(16, 35, 70, 0.86);
@@ -246,7 +255,7 @@ button {
   gap: 12px;
   align-items: center;
   margin-top: auto;
-  padding: 18px;
+  padding: 14px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
@@ -290,6 +299,15 @@ button {
   margin-top: 4px;
   color: var(--muted);
   font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-profile span,
+.user-summary span,
+.follow-list span,
+.post-copy {
+  overflow-wrap: anywhere;
 }
 
 .profile-avatar,
@@ -380,14 +398,17 @@ button {
 .workspace {
   grid-column: 2;
   min-width: 0;
-  min-height: calc(100vh - 56px);
+  height: 100%;
+  min-height: 0;
   padding-top: 0;
+  overflow: hidden;
 }
 
 .search-pill {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
   flex: 1;
   height: 44px;
   padding: 0 18px;
@@ -407,6 +428,7 @@ button {
 }
 
 .search-pill input {
+  min-width: 0;
   width: 100%;
   border: 0;
   background: transparent;
@@ -446,13 +468,16 @@ button {
 
 .page-shell {
   width: min(1270px, 100%);
-  min-height: calc(100vh - 56px);
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 .dashboard-layout {
   display: grid;
   width: 100%;
+  height: 100%;
   min-height: 0;
   grid-template-columns: minmax(360px, 1fr) var(--rail-col);
   justify-content: space-between;
@@ -470,6 +495,7 @@ button {
 
 .feed-frame {
   display: grid;
+  height: 100%;
   min-height: 0;
   border-radius: var(--radius-xl);
   padding: 14px;
@@ -478,8 +504,8 @@ button {
 
 .feed-column {
   min-height: 0;
-  overflow: visible;
-  padding-right: 0;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 
 .inset-panel {
@@ -694,6 +720,7 @@ button {
   font-size: 18px;
   font-weight: 700;
   line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .post-copy {
@@ -783,15 +810,16 @@ button {
 }
 
 .dashboard-rail {
-  position: sticky;
-  top: 28px;
+  position: relative;
+  top: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: calc(100vh - 56px);
+  height: 100%;
   min-height: 0;
-  max-height: calc(100vh - 56px);
+  max-height: 100%;
   overflow: hidden;
+  justify-content: space-between;
 }
 
 .dashboard-rail .glass-panel,
@@ -804,6 +832,8 @@ button {
   display: grid;
   align-content: start;
   gap: 12px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .rail-tools {
@@ -823,6 +853,19 @@ button {
   grid-template-columns: auto 1fr;
   gap: 12px;
   padding: 18px 20px;
+  min-width: 0;
+}
+
+.user-summary > div,
+.sidebar-profile-main {
+  min-width: 0;
+}
+
+.user-summary strong,
+.sidebar-profile strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-summary dl {
@@ -856,7 +899,8 @@ button {
 .rail-card {
   display: grid;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 15px 17px;
+  min-width: 0;
 }
 
 .rail-card header {
@@ -887,6 +931,7 @@ button {
   align-items: center;
   gap: 10px;
   padding: 2px 0;
+  min-width: 0;
 }
 
 .tiny-avatar {
@@ -911,14 +956,19 @@ button {
 
 .follow-list strong {
   font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .follow-list span {
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .overview-card {
   grid-template-columns: repeat(2, 1fr);
+  flex: 0 0 auto;
 }
 
 .overview-card header {
@@ -938,14 +988,14 @@ button {
 }
 
 .sidebar-utilities {
-  position: fixed;
-  bottom: 30px;
-  left: max(35px, calc((100vw - var(--shell-max)) / 2 + 15px));
+  position: absolute;
+  bottom: 0;
+  left: 0;
   z-index: 10;
   display: flex;
   align-items: center;
   gap: 6px;
-  width: calc(var(--sidebar-col) - 30px);
+  width: var(--sidebar-col);
   min-height: 58px;
   justify-content: space-between;
   padding: 6px;
@@ -1541,13 +1591,14 @@ textarea:focus {
 
 .notification-list {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .notification-list article {
   align-items: center;
   border-top: 1px solid var(--line-soft);
-  padding-top: 18px;
+  padding-top: 12px;
+  min-width: 0;
 }
 
 .notification-list article:first-of-type {
@@ -1557,6 +1608,40 @@ textarea:focus {
 
 .notification-list article.read {
   color: var(--muted);
+}
+
+.notification-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.notification-link > div {
+  min-width: 0;
+}
+
+.notification-link strong,
+.notification-link span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-link span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.notification-actions {
+  flex: 0 0 auto;
 }
 
 .muted-copy {
@@ -1787,11 +1872,12 @@ textarea:focus {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 700px) {
   .app-shell {
     height: auto;
     min-height: 100vh;
     overflow-y: auto;
+    place-items: start center;
   }
 
   .desktop-shell {
@@ -1801,13 +1887,16 @@ textarea:focus {
     padding: 14px 0;
     grid-template-columns: 1fr;
     overflow: visible;
+    transform: none;
   }
 
   .sidebar {
     position: relative;
     top: auto;
+    width: 100%;
     height: auto;
     min-height: auto;
+    overflow: visible;
   }
 
   .workspace {
@@ -1836,6 +1925,7 @@ textarea:focus {
 
   .sidebar-utilities {
     position: static;
+    width: 100%;
   }
 }
 
@@ -1866,7 +1956,7 @@ textarea:focus {
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 700px) {
   .desktop-shell {
     gap: 18px;
     padding: 14px;

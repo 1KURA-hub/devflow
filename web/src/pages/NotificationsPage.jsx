@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { Avatar } from "../components/Avatar";
 import { formatDate } from "../utils/format";
 
 export function NotificationsPage() {
+  const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
 
@@ -21,6 +24,38 @@ export function NotificationsPage() {
   async function markAll() {
     await api.markAllRead();
     setItems((current) => current.map((item) => ({ ...item, is_read: true })));
+  }
+
+  async function openNotification(item) {
+    if (!item.is_read) {
+      await api.markRead(item.id);
+      setItems((current) => current.map((next) => (next.id === item.id ? { ...next, is_read: true } : next)));
+    }
+    if (item.post_id) {
+      navigate(`/post/${item.post_id}`);
+      return;
+    }
+    if (item.actor_id) {
+      navigate(`/user/${item.actor_id}`);
+    }
+  }
+
+  function notificationText(item) {
+    const actor = item.actor?.nickname || item.actor?.username || `用户 #${item.actor_id}`;
+    const postTitle = item.post?.title ? `《${item.post.title}》` : "你的动态";
+    if (item.type === "follow") {
+      return `${actor} 关注了你`;
+    }
+    if (item.type === "like") {
+      return `${actor} 点赞了 ${postTitle}`;
+    }
+    if (item.type === "favorite") {
+      return `${actor} 收藏了 ${postTitle}`;
+    }
+    if (item.type === "comment") {
+      return `${actor} 评论了 ${postTitle}`;
+    }
+    return item.content;
   }
 
   if (error) {
@@ -42,15 +77,21 @@ export function NotificationsPage() {
         {items.length === 0 ? <p className="muted-copy">暂时没有通知。</p> : null}
         {items.map((item) => (
           <article key={item.id} className={item.is_read ? "read" : ""}>
-            <div>
-              <strong>{item.content}</strong>
-              <time>{formatDate(item.created_at)}</time>
+            <button className="notification-link" type="button" onClick={() => openNotification(item)}>
+              <Avatar user={item.actor} label={item.actor?.nickname || item.actor?.username || "D"} className="tiny-avatar" />
+              <div>
+                <strong>{notificationText(item)}</strong>
+                <span>{item.post?.title || item.content}</span>
+                <time>{formatDate(item.created_at)}</time>
+              </div>
+            </button>
+            <div className="notification-actions">
+              {!item.is_read ? (
+                <button className="text-link" onClick={() => markRead(item.id)}>
+                  标记已读
+                </button>
+              ) : null}
             </div>
-            {!item.is_read ? (
-              <button className="text-link" onClick={() => markRead(item.id)}>
-                标记已读
-              </button>
-            ) : null}
           </article>
         ))}
       </div>

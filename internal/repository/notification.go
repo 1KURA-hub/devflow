@@ -46,6 +46,8 @@ func (r *NotificationRepository) CreateOnce(ctx context.Context, eventID string,
 
 func (r *NotificationRepository) ListByUser(ctx context.Context, userID uint64, cursor *time.Time, limit int) ([]model.Notification, error) {
 	query := r.db.WithContext(ctx).
+		Preload("Actor").
+		Preload("Post").
 		Where("user_id = ?", userID).
 		Order("created_at DESC").
 		Order("id DESC").

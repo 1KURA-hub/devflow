@@ -25,6 +25,18 @@ const backgroundDBName = "devflow_ui";
 const backgroundStoreName = "preferences";
 const backgroundRecordKey = "background_image";
 const maxBackgroundSize = 8 * 1024 * 1024;
+const canvasWidth = 1440;
+const canvasHeight = 860;
+const canvasMargin = 28;
+
+function calculateCanvasScale() {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+  const widthScale = (window.innerWidth - canvasMargin * 2) / canvasWidth;
+  const heightScale = (window.innerHeight - canvasMargin * 2) / canvasHeight;
+  return Math.min(1, Math.max(0.38, Math.min(widthScale, heightScale)));
+}
 
 function openBackgroundDB() {
   return new Promise((resolve, reject) => {
@@ -80,6 +92,14 @@ export function AppShell() {
   const [richFeed, setRichFeed] = useState(false);
   const [profileBioDraft, setProfileBioDraft] = useState("");
   const [profileStats, setProfileStats] = useState({ posts: 0, following: 0, followers: 0 });
+  const [canvasScale, setCanvasScale] = useState(calculateCanvasScale);
+
+  useEffect(() => {
+    const resize = () => setCanvasScale(calculateCanvasScale());
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -298,7 +318,10 @@ export function AppShell() {
   return (
     <div
       className={`app-shell ${darkTheme ? "theme-dark" : ""}`}
-      style={backgroundImage ? { "--custom-bg": `url(${backgroundImage})` } : undefined}
+      style={{
+        "--app-scale": canvasScale,
+        ...(backgroundImage ? { "--custom-bg": `url(${backgroundImage})` } : {})
+      }}
     >
       <div className="ambient-overlay" />
       <div className="desktop-shell">

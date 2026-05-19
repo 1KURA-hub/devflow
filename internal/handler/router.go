@@ -30,6 +30,7 @@ func NewRouter(app *App) *gin.Engine {
 		api.GET("/users/:id/followers", app.listFollowerUsers)
 		api.GET("/feed/latest", app.listLatestPosts)
 		api.GET("/feed/hot", app.listHotPosts)
+		api.GET("/community/overview", app.communityOverview)
 
 		authenticated := api.Group("")
 		authenticated.Use(middleware.Auth(app.cfg.JWTSecret))
