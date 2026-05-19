@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Bell,
-  DraftingCompass,
   Flame,
   Home,
   Images,
@@ -25,6 +24,7 @@ export function AppShell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [darkTheme, setDarkTheme] = useState(false);
   const [richFeed, setRichFeed] = useState(false);
+  const [profileStats, setProfileStats] = useState({ posts: 0, following: 0, followers: 0 });
 
   useEffect(() => {
     let active = true;
@@ -48,6 +48,38 @@ export function AppShell() {
       active = false;
     };
   }, [location.pathname, user]);
+
+  useEffect(() => {
+    let active = true;
+    if (!user) {
+      setProfileStats({ posts: 0, following: 0, followers: 0 });
+      return undefined;
+    }
+
+    Promise.all([
+      api.userPosts(user.id, { limit: 50 }),
+      api.followingUsers(user.id, { limit: 50 }),
+      api.followers(user.id, { limit: 50 })
+    ])
+      .then(([posts, following, followers]) => {
+        if (active) {
+          setProfileStats({
+            posts: posts.items.length,
+            following: following.items.length,
+            followers: followers.items.length
+          });
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setProfileStats({ posts: 0, following: 0, followers: 0 });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   return (
     <div className={`app-shell ${darkTheme ? "theme-dark" : ""}`}>
@@ -89,34 +121,41 @@ export function AppShell() {
             {user ? (
               <>
                 <div className="profile-avatar">{user.nickname.slice(0, 1)}</div>
-                <div>
+                <div className="sidebar-profile-main">
                   <strong>{user.nickname}</strong>
                   <span>全栈开发工程师</span>
+                </div>
+                <button type="button" aria-label="设置">
+                  <Settings size={16} />
+                </button>
+                <div className="sidebar-profile-stats">
+                  <span>
+                    <strong>{profileStats.posts}</strong>
+                    动态
+                  </span>
+                  <span>
+                    <strong>{profileStats.following}</strong>
+                    关注
+                  </span>
+                  <span>
+                    <strong>{profileStats.followers}</strong>
+                    粉丝
+                  </span>
                 </div>
               </>
             ) : (
               <>
                 <div className="profile-avatar">D</div>
-                <div>
+                <div className="sidebar-profile-main">
                   <strong>访客模式</strong>
                   <span>登录后同步你的动态</span>
                 </div>
+                <button type="button" aria-label="设置">
+                  <Settings size={16} />
+                </button>
               </>
             )}
-            <button type="button" aria-label="设置">
-              <Settings size={16} />
-            </button>
           </section>
-
-          <div className="sidebar-links">
-            {user ? (
-              <button type="button">
-                <DraftingCompass size={17} />
-                草稿箱
-                <span>3</span>
-              </button>
-            ) : null}
-          </div>
         </aside>
 
         <div className="workspace">
