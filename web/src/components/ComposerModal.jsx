@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import { api } from "../api/client";
 
 export function ComposerModal({ open, onClose }) {
-  const [form, setForm] = useState({ title: "", content: "", tags: "" });
+  const [form, setForm] = useState({ title: "", content: "", cover_url: "", tags: "" });
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,7 +18,7 @@ export function ComposerModal({ open, onClose }) {
     setError("");
     try {
       await api.createPost(form);
-      setForm({ title: "", content: "", tags: "" });
+      setForm({ title: "", content: "", cover_url: "", tags: "" });
       onClose();
       window.dispatchEvent(new CustomEvent("devflow:post-created"));
       window.dispatchEvent(new CustomEvent("devflow:celebrate"));
@@ -25,6 +26,24 @@ export function ComposerModal({ open, onClose }) {
       setError(nextError.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function changeCover(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    setUploadingCover(true);
+    setError("");
+    try {
+      const result = await api.uploadImage(file);
+      setForm((current) => ({ ...current, cover_url: result.url }));
+    } catch (nextError) {
+      setError(nextError.message);
+    } finally {
+      setUploadingCover(false);
     }
   }
 
@@ -57,6 +76,23 @@ export function ComposerModal({ open, onClose }) {
             required
           />
         </label>
+        <div className="cover-field">
+          <span>封面</span>
+          {form.cover_url ? (
+            <div className="cover-preview">
+              <img src={form.cover_url} alt="动态封面预览" />
+              <button type="button" onClick={() => setForm({ ...form, cover_url: "" })}>
+                移除
+              </button>
+            </div>
+          ) : (
+            <label className="cover-upload">
+              <ImagePlus size={18} />
+              {uploadingCover ? "上传中..." : "选择封面"}
+              <input type="file" accept="image/*" onChange={changeCover} disabled={uploadingCover} />
+            </label>
+          )}
+        </div>
         <label>
           标签
           <input

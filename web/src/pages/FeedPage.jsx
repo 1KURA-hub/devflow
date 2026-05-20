@@ -5,16 +5,9 @@ import { api } from "../api/client";
 import { Avatar } from "../components/Avatar";
 import { FeedList } from "../components/FeedList";
 import { useAuth } from "../state/auth";
+import devflowIcon from "../assets/devflow-icon.png";
 
 const topics = ["Go", "Redis", "微服务", "Docker", "K8s", "并发编程", "AI", "RAG", "设计模式", "Linux", "数据库", "DevOps"];
-const follows = [
-  { id: "tech-liu", name: "刘超的技术博客", bio: "架构与性能优化" },
-  { id: "nav", name: "编程导航", bio: "优质技术资源分享" },
-  { id: "go-night", name: "Go 夜读", bio: "Go 工程实践" },
-  { id: "redis-lab", name: "Redis 实战派", bio: "缓存与数据结构" },
-  { id: "cloud-notes", name: "云原生笔记", bio: "Docker / K8s" },
-  { id: "ai-dev", name: "AI 工程化", bio: "RAG 与智能应用" }
-];
 const feedTabs = [
   { to: "/", label: "最新", end: true },
   { to: "/hot", label: "热门" },
@@ -37,6 +30,7 @@ const demoFeedPosts = [
     author: demoAuthors[0],
     title: "把点赞链路改回清晰写法",
     content: "先让接口行为稳定，再考虑性能细节。唯一索引兜底，服务层只关心是否真的创建或删除关系。",
+    cover_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
     tags: "Go,GORM,并发编程",
     like_count: 18,
     favorite_count: 6,
@@ -51,6 +45,7 @@ const demoFeedPosts = [
     author: demoAuthors[1],
     title: "移动端首页改成动态优先",
     content: "顶部频道只保留关注、热门、最新，底部只放动态、发布和我的。信息密度要够，但按钮不能挤。",
+    cover_url: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80",
     tags: "React,UI,DevOps",
     like_count: 12,
     favorite_count: 5,
@@ -65,6 +60,7 @@ const demoFeedPosts = [
     author: demoAuthors[2],
     title: "通知页要能说明谁做了什么",
     content: "点赞、收藏、评论跳动态详情，关注跳用户主页。列表里直接展示 actor 和 post，比固定文案清楚很多。",
+    cover_url: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
     tags: "产品设计,React",
     like_count: 9,
     favorite_count: 4,
@@ -76,7 +72,7 @@ const demoFeedPosts = [
 ];
 
 export function FeedPage({ mode }) {
-  const { user } = useAuth();
+  const { user, updateMe } = useAuth();
   const { openComposer, richFeed, profileStats, adjustProfileStats } = useOutletContext();
   const [refreshKey, setRefreshKey] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,6 +82,7 @@ export function FeedPage({ mode }) {
   const [showAllTopics, setShowAllTopics] = useState(false);
   const [followPage, setFollowPage] = useState(0);
   const [followed, setFollowed] = useState({});
+  const [recommendedUsers, setRecommendedUsers] = useState([]);
   const [overview, setOverview] = useState({
     total_users: 0,
     total_posts: 0,
@@ -126,10 +123,32 @@ export function FeedPage({ mode }) {
     };
   }, [refreshKey]);
 
+  useEffect(() => {
+    let active = true;
+    api
+      .recommendedUsers({ limit: 15 })
+      .then((result) => {
+        if (active) {
+          setRecommendedUsers(result.items || []);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRecommendedUsers(demoAuthors);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   const visibleTopics = showAllTopics ? topics : topics.slice(0, 8);
   const suggestedFollows = useMemo(
-    () => Array.from({ length: 3 }, (_, index) => follows[(followPage * 3 + index) % follows.length]),
-    [followPage]
+    () => {
+      const users = recommendedUsers.length ? recommendedUsers : demoAuthors;
+      return Array.from({ length: Math.min(3, users.length) }, (_, index) => users[(followPage * 3 + index) % users.length]);
+    },
+    [followPage, recommendedUsers]
   );
 
   function applyTopic(topic) {
@@ -144,7 +163,9 @@ export function FeedPage({ mode }) {
           <header className="mobile-feed-header">
             <div className="mobile-page-topbar">
               <div>
-                <span className="mobile-brand-mark">D</span>
+                <span className="mobile-brand-mark">
+                  <img src={devflowIcon} alt="" />
+                </span>
                 <strong>DevFlow</strong>
               </div>
               <button type="button" onClick={() => setMobileSearchOpen((value) => !value)} aria-label="搜索">
@@ -261,7 +282,11 @@ export function FeedPage({ mode }) {
             <Avatar user={user} label="L" className="profile-avatar large" />
             <div>
               <strong>{user ? user.nickname : "Lin"}</strong>
-              <span>{user ? user.bio || "还没有填写简介" : "登录后同步你的动态"}</span>
+              {user ? (
+                <InlineBioEditor user={user} updateMe={updateMe} />
+              ) : (
+                <span>登录后同步你的动态</span>
+              )}
             </div>
             <dl>
               <div>
@@ -311,16 +336,23 @@ export function FeedPage({ mode }) {
             <div className="follow-list">
               {suggestedFollows.map((follow) => (
                 <article className="follow-item" key={follow.id}>
-                  <div className="tiny-avatar">{follow.name.slice(0, 1)}</div>
+                  <Avatar user={follow} label={follow.nickname || follow.username || "D"} className="tiny-avatar" />
                   <div>
-                    <strong>{follow.name}</strong>
-                    <span>{follow.bio}</span>
+                    <strong>{follow.nickname || follow.username || `用户 #${follow.id}`}</strong>
+                    <span>{follow.bio || "这个开发者还没有填写简介。"}</span>
                   </div>
                   <button
                     className={followed[follow.id] ? "active" : ""}
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       const nextFollowed = !followed[follow.id];
+                      if (user && typeof follow.id === "number") {
+                        try {
+                          await (nextFollowed ? api.follow(follow.id) : api.unfollow(follow.id));
+                        } catch {
+                          return;
+                        }
+                      }
                       setFollowed((current) => ({ ...current, [follow.id]: nextFollowed }));
                       adjustProfileStats?.({ following: nextFollowed ? 1 : -1 });
                     }}
@@ -356,5 +388,46 @@ export function FeedPage({ mode }) {
         </div>
       </aside>
     </div>
+  );
+}
+
+function InlineBioEditor({ user, updateMe }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(user.bio || "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(user.bio || "");
+  }, [user.bio]);
+
+  async function save(event) {
+    event.preventDefault();
+    if (saving) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateMe({ bio: draft });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <button className="inline-bio-text" type="button" onClick={() => setEditing(true)}>
+        {user.bio || "还没有填写简介"}
+      </button>
+    );
+  }
+
+  return (
+    <form className="inline-bio-editor" onSubmit={save}>
+      <input value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={255} placeholder="写一句你的技术方向" autoFocus />
+      <button type="submit" disabled={saving}>
+        保存
+      </button>
+    </form>
   );
 }

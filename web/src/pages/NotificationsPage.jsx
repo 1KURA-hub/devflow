@@ -64,7 +64,7 @@ export function NotificationsPage() {
 
   return (
     <section className="main-column narrow">
-      <header className="section-heading toolbar-heading">
+      <header className="section-heading toolbar-heading notification-heading">
         <div>
           <p className="eyebrow">通知中心</p>
           <h1>最近发生的互动</h1>

@@ -25,6 +25,7 @@ func NewRouter(app *App) *gin.Engine {
 		api.POST("/auth/login", app.login)
 		api.GET("/posts/:id", app.getPost)
 		api.GET("/posts/:id/comments", app.listComments)
+		api.GET("/recommended-users", app.recommendedUsers)
 		api.GET("/users/:id/posts", app.listUserPosts)
 		api.GET("/users/:id/following", app.listFollowingUsers)
 		api.GET("/users/:id/followers", app.listFollowerUsers)

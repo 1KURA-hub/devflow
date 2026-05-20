@@ -11,6 +11,8 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(Boolean(post.liked));
   const [favorited, setFavorited] = useState(Boolean(post.favorited));
+  const [likedChanged, setLikedChanged] = useState(false);
+  const [favoritedChanged, setFavoritedChanged] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [counts, setCounts] = useState({
     like_count: post.like_count,
@@ -36,12 +38,22 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
       return;
     }
     const nextLiked = !liked;
-    await (nextLiked ? api.like(post.id) : api.unlike(post.id));
+    setLikedChanged(true);
     setLiked(nextLiked);
     setCounts((current) => ({
       ...current,
       like_count: Math.max(0, current.like_count + (nextLiked ? 1 : -1))
     }));
+    try {
+      await (nextLiked ? api.like(post.id) : api.unlike(post.id));
+    } catch (error) {
+      setLiked(!nextLiked);
+      setCounts((current) => ({
+        ...current,
+        like_count: Math.max(0, current.like_count + (nextLiked ? -1 : 1))
+      }));
+      window.alert(error.message);
+    }
   }
 
   async function toggleFavorite(event) {
@@ -52,12 +64,22 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
       return;
     }
     const nextFavorited = !favorited;
-    await (nextFavorited ? api.favorite(post.id) : api.unfavorite(post.id));
+    setFavoritedChanged(true);
     setFavorited(nextFavorited);
     setCounts((current) => ({
       ...current,
       favorite_count: Math.max(0, current.favorite_count + (nextFavorited ? 1 : -1))
     }));
+    try {
+      await (nextFavorited ? api.favorite(post.id) : api.unfavorite(post.id));
+    } catch (error) {
+      setFavorited(!nextFavorited);
+      setCounts((current) => ({
+        ...current,
+        favorite_count: Math.max(0, current.favorite_count + (nextFavorited ? -1 : 1))
+      }));
+      window.alert(error.message);
+    }
   }
 
   async function deletePost(event) {
@@ -103,6 +125,7 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
         <time>{formatDate(post.created_at)}</time>
       </div>
       {rich ? <div className="post-preview" aria-hidden="true" /> : null}
+      {post.cover_url ? <img className="post-cover" src={post.cover_url} alt="" /> : null}
       <h3 className="post-title">{post.title}</h3>
       <p className="post-copy">{post.content}</p>
       <div className="tag-row">
@@ -111,7 +134,11 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
         ))}
       </div>
       <footer className="post-actions">
-        <button className={liked ? "active" : ""} onClick={toggleLike}>
+        <button
+          className={`${liked ? "active" : ""} ${likedChanged ? "changed" : ""}`}
+          onAnimationEnd={() => setLikedChanged(false)}
+          onClick={toggleLike}
+        >
           <Heart size={16} fill={liked ? "currentColor" : "none"} />
           {counts.like_count}
         </button>
@@ -119,7 +146,11 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
           <MessageCircle size={16} />
           {counts.comment_count}
         </Link>
-        <button className={`favorite-action ${favorited ? "active" : ""}`} onClick={toggleFavorite}>
+        <button
+          className={`favorite-action ${favorited ? "active" : ""} ${favoritedChanged ? "changed" : ""}`}
+          onAnimationEnd={() => setFavoritedChanged(false)}
+          onClick={toggleFavorite}
+        >
           <Star size={16} fill={favorited ? "currentColor" : "none"} />
           {counts.favorite_count}
         </button>

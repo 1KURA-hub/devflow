@@ -1,0 +1,2 @@
+ALTER TABLE posts
+  ADD COLUMN cover_url VARCHAR(512) NOT NULL DEFAULT '' AFTER content;

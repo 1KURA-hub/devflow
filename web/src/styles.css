@@ -54,6 +54,10 @@ textarea {
   font: inherit;
 }
 
+textarea {
+  resize: none;
+}
+
 button {
   cursor: pointer;
 }
@@ -160,6 +164,47 @@ button {
   line-height: 1.55;
 }
 
+.mobile-bio-text,
+.inline-bio-text {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  text-align: left;
+}
+
+.mobile-bio-editor,
+.inline-bio-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mobile-bio-editor input,
+.inline-bio-editor input {
+  min-height: 34px;
+  border-radius: 12px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.mobile-bio-editor button,
+.inline-bio-editor button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .mobile-me-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -193,6 +238,14 @@ button {
 
 .mobile-me-stats button:active {
   transform: scale(0.96);
+}
+
+.mobile-me-stats button:focus,
+.mobile-me-stats button:focus-visible,
+.mobile-me-shortcuts button:focus,
+.mobile-me-shortcuts button:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .mobile-me-stats strong {
@@ -714,6 +767,14 @@ button {
   overflow-wrap: anywhere;
 }
 
+.post-cover {
+  width: 100%;
+  aspect-ratio: 16 / 8;
+  border-radius: 16px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.5);
+}
+
 .profile-avatar,
 .mini-avatar,
 .tiny-avatar {
@@ -812,6 +873,10 @@ button {
   overflow: hidden;
 }
 
+.page-shell {
+  scrollbar-gutter: stable;
+}
+
 .search-pill {
   display: flex;
   align-items: center;
@@ -879,13 +944,14 @@ button {
   height: 100%;
   min-height: 0;
   margin: 0 auto;
-  overflow: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .dashboard-layout {
   display: grid;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   min-height: 0;
   min-width: 0;
   grid-template-columns: minmax(520px, 1fr) var(--rail-col);
@@ -905,7 +971,7 @@ button {
 
 .feed-frame {
   display: grid;
-  height: 100%;
+  height: auto;
   min-height: 0;
   border-radius: var(--radius-xl);
   padding: 14px;
@@ -915,8 +981,8 @@ button {
 .feed-column {
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
-  padding-right: 2px;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .inset-panel {
@@ -1203,11 +1269,14 @@ button {
 
 .post-actions button.active {
   color: #e0445f;
-  animation: action-pop 360ms cubic-bezier(0.2, 1.3, 0.3, 1) both;
 }
 
 .post-actions .favorite-action.active {
   color: #e5a900;
+}
+
+.post-actions button.changed {
+  animation: action-pop 360ms cubic-bezier(0.2, 1.3, 0.3, 1) both;
 }
 
 .post-actions .delete-action {
@@ -1245,8 +1314,8 @@ button {
   height: 100%;
   min-width: 0;
   min-height: 0;
-  max-height: 100%;
-  overflow: hidden;
+  max-height: none;
+  overflow: visible;
   justify-content: flex-start;
 }
 
@@ -1261,8 +1330,8 @@ button {
   align-content: start;
   gap: 12px;
   min-height: 0;
-  overflow-y: auto;
-  padding-right: 2px;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .rail-tools {
@@ -1558,6 +1627,56 @@ button {
   animation: modal-spring 260ms cubic-bezier(0.2, 1.1, 0.28, 1) both;
 }
 
+.cover-field {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.cover-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border: 1px dashed rgba(44, 99, 230, 0.34);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.44);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.cover-upload input {
+  display: none;
+}
+
+.cover-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.cover-preview img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+}
+
+.cover-preview button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15, 26, 42, 0.72);
+  color: #fff;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .settings-modal {
   position: relative;
   display: grid;
@@ -1626,27 +1745,6 @@ button {
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
-}
-
-.bio-setting {
-  display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr) auto;
-}
-
-.bio-setting input {
-  min-width: 0;
-  height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.62);
-  padding: 0 12px;
-  color: var(--ink);
-  outline: none;
-}
-
-.bio-setting .primary-button {
-  min-height: 40px;
-  white-space: nowrap;
 }
 
 .background-control > div {
@@ -1727,12 +1825,19 @@ label {
 input,
 textarea {
   width: 100%;
+  min-height: 132px;
+  max-height: 132px;
   border: 1px solid rgba(255, 255, 255, 0.58);
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.42);
   color: var(--ink);
   padding: 12px 14px;
   outline: none;
+}
+
+.comment-form textarea {
+  min-height: 96px;
+  max-height: 96px;
 }
 
 input:focus,
@@ -2069,18 +2174,22 @@ textarea:focus {
 .notification-list {
   display: grid;
   gap: 12px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 6px 18px rgba(29, 55, 90, 0.06);
 }
 
 .notification-list article {
   align-items: center;
-  border-top: 1px solid var(--line-soft);
-  padding-top: 12px;
+  border-top: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.46);
+  padding: 12px;
   min-width: 0;
 }
 
 .notification-list article:first-of-type {
-  border-top: 0;
-  padding-top: 0;
+  padding-top: 12px;
 }
 
 .notification-list article.read {
@@ -2119,6 +2228,16 @@ textarea:focus {
 
 .notification-actions {
   flex: 0 0 auto;
+}
+
+.toolbar-heading .ghost-button {
+  min-height: 32px;
+  border-color: rgba(44, 99, 230, 0.2);
+  background: rgba(44, 99, 230, 0.08);
+  color: var(--accent);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .muted-copy {
@@ -2255,11 +2374,6 @@ textarea:focus {
   color: var(--ink);
 }
 
-.theme-dark .bio-setting input {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--ink);
-}
-
 .theme-dark .sidebar-profile > button,
 .theme-dark .sidebar-utilities button,
 .theme-dark .composer-strip div button,
@@ -2338,6 +2452,54 @@ textarea:focus {
 
 .theme-dark .modal-actions {
   background: linear-gradient(180deg, rgba(8, 13, 22, 0), rgba(8, 13, 22, 0.94) 34%);
+}
+
+.theme-dark .mobile-feed-header,
+.theme-dark .mobile-me-page > .mobile-page-topbar {
+  background: linear-gradient(180deg, rgba(8, 13, 22, 0.98), rgba(8, 13, 22, 0.86));
+}
+
+.theme-dark .mobile-page-topbar strong,
+.theme-dark .mobile-feed-header a.active,
+.theme-dark .mobile-bottom-nav a.active,
+.theme-dark .mobile-bottom-nav button.active,
+.theme-dark .mobile-me-identity h1,
+.theme-dark .mobile-me-stats strong,
+.theme-dark .mobile-me-shortcuts button,
+.theme-dark .mobile-stat-modal h2,
+.theme-dark .mobile-stat-list strong,
+.theme-dark .mobile-stat-posts strong,
+.theme-dark .mobile-notification-preview strong {
+  color: var(--ink);
+}
+
+.theme-dark .mobile-bottom-nav,
+.theme-dark .mobile-me-card,
+.theme-dark .mobile-me-shortcuts,
+.theme-dark .mobile-me-preview,
+.theme-dark .mobile-stat-modal,
+.theme-dark .mobile-search-panel,
+.theme-dark .mobile-me-stats button,
+.theme-dark .mobile-me-shortcuts button,
+.theme-dark .mobile-notification-preview button,
+.theme-dark .mobile-stat-list a,
+.theme-dark .mobile-stat-posts a,
+.theme-dark .mobile-me-empty {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 36, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.theme-dark .mobile-feed-header a,
+.theme-dark .mobile-bio-text,
+.theme-dark .mobile-me-card p,
+.theme-dark .mobile-me-stats button,
+.theme-dark .mobile-notification-preview em,
+.theme-dark .mobile-stat-list em,
+.theme-dark .mobile-stat-posts span {
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2614,6 +2776,13 @@ textarea:focus {
     box-shadow: 0 10px 22px rgba(44, 99, 230, 0.22);
   }
 
+  .mobile-brand-mark img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
   .mobile-feed-header nav {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -2792,6 +2961,12 @@ textarea:focus {
   .toolbar-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .notification-heading {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
   }
 
   .profile-layout.own-profile > .profile-header {

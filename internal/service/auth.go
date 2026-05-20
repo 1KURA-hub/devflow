@@ -121,6 +121,10 @@ func (s *AuthService) Me(ctx context.Context, userID uint64) (*model.User, error
 	return s.users.FindByID(ctx, userID)
 }
 
+func (s *AuthService) RecommendedUsers(ctx context.Context, viewerID uint64, limit int) ([]model.User, error) {
+	return s.users.ListRecommended(ctx, viewerID, limit)
+}
+
 func (s *AuthService) UpdateProfile(ctx context.Context, input UpdateProfileInput) (*model.User, error) {
 	if input.UserID == 0 {
 		return nil, ErrInvalidInput

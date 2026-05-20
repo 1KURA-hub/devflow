@@ -6,6 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { PostCard } from "../components/PostCard";
 import { useAuth } from "../state/auth";
 import { formatDate } from "../utils/format";
+import devflowIcon from "../assets/devflow-icon.png";
 
 const guestUser = {
   id: "guest",
@@ -24,6 +25,7 @@ const demoPosts = [
     author: guestUser,
     title: "把点赞链路改回清晰写法",
     content: "先让行为稳定，再考虑性能细节。接口返回越简单，前端判断越少。",
+    cover_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
     tags: "Go,GORM",
     like_count: 12,
     favorite_count: 3,
@@ -38,6 +40,7 @@ const demoPosts = [
     author: demoUsers[1],
     title: "移动端首页改成动态优先",
     content: "顶部频道只保留关注、热门、最新，底部只放动态、发布和我的。",
+    cover_url: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80",
     tags: "React,UI",
     like_count: 8,
     favorite_count: 5,
@@ -71,7 +74,7 @@ const demoNotifications = [
 ];
 
 export function MobileMePage() {
-  const { user } = useAuth();
+  const { user, updateMe } = useAuth();
   const { openSettings, profileStats } = useOutletContext();
   const [activePreview, setActivePreview] = useState("");
   const [favorites, setFavorites] = useState([]);
@@ -198,7 +201,9 @@ export function MobileMePage() {
     <main className="mobile-me-page">
       <header className="mobile-page-topbar">
         <div>
-          <span className="mobile-brand-mark">D</span>
+          <span className="mobile-brand-mark">
+            <img src={devflowIcon} alt="" />
+          </span>
           <strong>DevFlow</strong>
         </div>
         <button type="button" onClick={openSettings} aria-label="设置">
@@ -214,7 +219,7 @@ export function MobileMePage() {
             <span>DevFlow 开发者</span>
           </div>
         </div>
-        <p>{profile.bio || "还没有填写简介。"}</p>
+        <MobileBioEditor user={user} profile={profile} updateMe={updateMe} />
         <div className="mobile-me-stats">
           <button type="button" onClick={() => showStat("following")}>
             <strong>{stats.following}</strong>
@@ -271,6 +276,48 @@ export function MobileMePage() {
         />
       ) : null}
     </main>
+  );
+}
+
+function MobileBioEditor({ user, profile, updateMe }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(profile.bio || "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(profile.bio || "");
+  }, [profile.bio]);
+
+  async function save(event) {
+    event.preventDefault();
+    if (!user || saving) {
+      setEditing(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateMe({ bio: draft });
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!editing) {
+    return (
+      <button className="mobile-bio-text" type="button" onClick={() => setEditing(true)}>
+        {profile.bio || "还没有填写简介。"}
+      </button>
+    );
+  }
+
+  return (
+    <form className="mobile-bio-editor" onSubmit={save}>
+      <input value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={255} placeholder="写一句你的技术方向" autoFocus />
+      <button type="submit" disabled={saving || !user}>
+        {user ? "保存" : "预览"}
+      </button>
+    </form>
   );
 }
 
@@ -337,7 +384,7 @@ function PreviewPanel({ type, loading, error, favorites, notifications }) {
     <section className="mobile-me-preview">
       <header>
         <h2>{title}</h2>
-        <Link to={type === "favorites" ? "/favorites" : "/notifications"}>全部</Link>
+        {type === "notifications" ? <Link to="/notifications">全部</Link> : null}
       </header>
       {loading ? <p className="mobile-me-empty">加载中...</p> : null}
       {error ? <p className="mobile-me-empty">{error}</p> : null}

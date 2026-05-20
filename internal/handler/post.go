@@ -18,9 +18,10 @@ import (
 )
 
 type createPostRequest struct {
-	Title   string `json:"title"`
-	Content string `json:"content"`
-	Tags    string `json:"tags"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	CoverURL string `json:"cover_url"`
+	Tags     string `json:"tags"`
 }
 
 type postResponse struct {
@@ -52,6 +53,7 @@ func (a *App) createPost(c *gin.Context) {
 		AuthorID: userID,
 		Title:    req.Title,
 		Content:  req.Content,
+		CoverURL: req.CoverURL,
 		Tags:     req.Tags,
 	})
 	if err != nil {

@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"devflow/internal/middleware"
 	"devflow/internal/response"
@@ -77,6 +78,24 @@ func (a *App) me(c *gin.Context) {
 		return
 	}
 	response.OK(c, user)
+}
+
+func (a *App) recommendedUsers(c *gin.Context) {
+	limit := 15
+	if raw := c.Query("limit"); raw != "" {
+		parsed, err := strconv.Atoi(raw)
+		if err != nil || parsed <= 0 {
+			response.Error(c, http.StatusBadRequest, "invalid limit")
+			return
+		}
+		limit = parsed
+	}
+	users, err := a.authService.RecommendedUsers(c.Request.Context(), a.viewerUserID(c), limit)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	response.OK(c, gin.H{"items": users})
 }
 
 func (a *App) updateMe(c *gin.Context) {

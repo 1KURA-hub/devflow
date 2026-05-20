@@ -32,6 +32,7 @@ type CreatePostInput struct {
 	AuthorID uint64
 	Title    string
 	Content  string
+	CoverURL string
 	Tags     string
 }
 
@@ -61,11 +62,15 @@ func NewPostService(posts *repository.PostRepository, follows *repository.Follow
 func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model.Post, error) {
 	title := strings.TrimSpace(input.Title)
 	content := strings.TrimSpace(input.Content)
+	coverURL := strings.TrimSpace(input.CoverURL)
 	tags := normalizeTags(input.Tags)
 	if input.AuthorID == 0 || title == "" || content == "" {
 		return nil, ErrInvalidInput
 	}
-	if utf8.RuneCountInString(title) > 120 || utf8.RuneCountInString(content) > 5000 || utf8.RuneCountInString(tags) > 255 {
+	if utf8.RuneCountInString(title) > 120 ||
+		utf8.RuneCountInString(content) > 5000 ||
+		utf8.RuneCountInString(coverURL) > 512 ||
+		utf8.RuneCountInString(tags) > 255 {
 		return nil, ErrInvalidInput
 	}
 	if _, err := s.users.FindByID(ctx, input.AuthorID); err != nil {
@@ -76,6 +81,7 @@ func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model
 		AuthorID: input.AuthorID,
 		Title:    title,
 		Content:  content,
+		CoverURL: coverURL,
 		Tags:     tags,
 		Status:   1,
 	}

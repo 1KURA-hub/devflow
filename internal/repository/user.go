@@ -43,6 +43,29 @@ func (r *UserRepository) FindByUsername(ctx context.Context, username string) (*
 	return &user, nil
 }
 
+func (r *UserRepository) ListRecommended(ctx context.Context, viewerID uint64, limit int) ([]model.User, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 30 {
+		limit = 30
+	}
+	query := r.db.WithContext(ctx).
+		Where("status = ?", 1).
+		Order("created_at DESC").
+		Order("id DESC").
+		Limit(limit)
+	if viewerID != 0 {
+		query = query.Where("id <> ?", viewerID)
+	}
+
+	var users []model.User
+	if err := query.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 func (r *UserRepository) UpdateProfile(ctx context.Context, user *model.User) error {
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
