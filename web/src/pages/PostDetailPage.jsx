@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { PostCard } from "../components/PostCard";
@@ -40,7 +41,11 @@ export function PostDetailPage() {
   return (
     <div className="detail-layout">
       <section className="main-column">
-        <PostCard post={post} onDeleted={() => navigate("/")} />
+        <button className="mobile-detail-back" type="button" onClick={() => navigate(-1)}>
+          <ArrowLeft size={18} />
+          返回
+        </button>
+        <PostCard post={post} detail onDeleted={() => navigate("/")} />
         <section className="surface comments-panel">
           <header>
             <p className="eyebrow">评论</p>

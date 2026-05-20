@@ -6,7 +6,7 @@ import { useAuth } from "../state/auth";
 import { Avatar } from "./Avatar";
 import { formatDate, splitTags } from "../utils/format";
 
-export function PostCard({ post, compact = false, rich = false, onDeleted }) {
+export function PostCard({ post, compact = false, rich = false, detail = false, onDeleted }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [liked, setLiked] = useState(Boolean(post.liked));
@@ -104,6 +104,9 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
   }
 
   function openPost() {
+    if (detail) {
+      return;
+    }
     navigate(`/post/${post.id}`);
   }
 
@@ -111,12 +114,19 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
     event.stopPropagation();
   }
 
+  function stopDetailCommentNavigation(event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   const author = post.author || null;
   const authorName = author?.nickname || `作者 #${post.author_id}`;
   const canDelete = user?.id === post.author_id;
+  const showCover = Boolean(post.cover_url) && (rich || detail);
+  const showPreview = rich && !post.cover_url;
 
   return (
-    <article className={`post-card ${compact ? "compact" : ""}`} onClick={openPost}>
+    <article className={`post-card ${compact ? "compact" : ""} ${detail ? "detail" : ""}`} onClick={openPost}>
       <div className="post-meta">
         <Link className="post-author" to={`/user/${post.author_id}`} onClick={stopCardOpen}>
           <Avatar user={author} label={authorName} className="tiny-avatar" />
@@ -124,8 +134,8 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
         </Link>
         <time>{formatDate(post.created_at)}</time>
       </div>
-      {rich ? <div className="post-preview" aria-hidden="true" /> : null}
-      {post.cover_url ? <img className="post-cover" src={post.cover_url} alt="" /> : null}
+      {showPreview ? <div className="post-preview" aria-hidden="true" /> : null}
+      {showCover ? <img className="post-cover" src={post.cover_url} alt="" /> : null}
       <h3 className="post-title">{post.title}</h3>
       <p className="post-copy">{post.content}</p>
       <div className="tag-row">
@@ -142,7 +152,7 @@ export function PostCard({ post, compact = false, rich = false, onDeleted }) {
           <Heart size={16} fill={liked ? "currentColor" : "none"} />
           {counts.like_count}
         </button>
-        <Link to={`/post/${post.id}`} onClick={stopCardOpen}>
+        <Link to={`/post/${post.id}`} onClick={detail ? stopDetailCommentNavigation : stopCardOpen}>
           <MessageCircle size={16} />
           {counts.comment_count}
         </Link>

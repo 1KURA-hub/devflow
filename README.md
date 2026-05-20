@@ -41,6 +41,24 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml run --rm seed
 The production web container serves the React build and proxies `/api/*` to the Go app.
 The demo seed command creates reusable showcase data, including users, avatar URLs, posts, follow relations, likes, favorites, comments, and notifications.
 
+## GitHub Actions CI/CD
+
+`.github/workflows/ci-cd.yml` runs Go tests and the React production build on pull requests and pushes.
+Pushes to `main` deploy to the production server over SSH.
+
+Required repository secrets:
+
+```text
+DEPLOY_HOST=43.136.63.219
+DEPLOY_PORT=22
+DEPLOY_USER=root
+DEPLOY_PATH=/go-course/devflow
+DEPLOY_SSH_KEY=<private key with access to the server>
+```
+
+The deploy job uploads a git bundle to the server, updates the working tree from that bundle, rebuilds `app`, `web`, and `seed`, runs seed with `AUTO_MIGRATE=true`, then restarts `app` and `web`.
+The server must already contain `.env.prod`; it is not stored in GitHub secrets or committed to the repository.
+
 The server exposes:
 
 ```text

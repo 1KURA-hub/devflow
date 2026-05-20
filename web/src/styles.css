@@ -62,6 +62,12 @@ button {
   cursor: pointer;
 }
 
+button,
+a,
+.post-card {
+  -webkit-tap-highlight-color: transparent;
+}
+
 .app-shell {
   position: relative;
   height: 100vh;
@@ -98,7 +104,8 @@ button {
 .mobile-feed-header,
 .mobile-search-panel,
 .mobile-profile-hub,
-.mobile-page-topbar {
+.mobile-page-topbar,
+.mobile-detail-back {
   display: none;
 }
 
@@ -1273,7 +1280,18 @@ button {
   border: 0;
   background: transparent;
   color: inherit;
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
   transition: transform 160ms ease, color 160ms ease;
+}
+
+.post-actions button:focus,
+.post-actions a:focus,
+.post-actions button:focus-visible,
+.post-actions a:focus-visible {
+  background: transparent;
+  outline: none;
 }
 
 .post-actions button.active {
@@ -1300,6 +1318,33 @@ button {
 .post-actions button:hover,
 .post-actions a:hover {
   transform: translateY(-1px) scale(1.08);
+}
+
+.post-card.detail {
+  cursor: default;
+}
+
+.post-card.detail:hover {
+  transform: none;
+}
+
+.post-card.detail .post-title,
+.post-card.detail .post-copy {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.post-card.detail .post-title {
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.24;
+}
+
+.post-card.detail .post-copy {
+  color: rgba(22, 35, 61, 0.78);
+  font-size: 15px;
+  line-height: 1.9;
+  white-space: pre-wrap;
 }
 
 @keyframes action-pop {
@@ -1612,7 +1657,7 @@ button {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 80;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -1635,6 +1680,16 @@ button {
   box-shadow: var(--shadow);
   backdrop-filter: blur(26px) saturate(145%);
   animation: modal-spring 260ms cubic-bezier(0.2, 1.1, 0.28, 1) both;
+}
+
+.composer-modal input {
+  min-height: 46px;
+  max-height: 46px;
+}
+
+.composer-modal textarea {
+  min-height: 132px;
+  max-height: 132px;
 }
 
 .cover-field {
@@ -2241,13 +2296,20 @@ textarea:focus {
 }
 
 .toolbar-heading .ghost-button {
-  min-height: 32px;
-  border-color: rgba(44, 99, 230, 0.2);
-  background: rgba(44, 99, 230, 0.08);
-  color: var(--accent);
-  padding: 0 12px;
+  min-height: 30px;
+  border-color: rgba(22, 35, 61, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(22, 35, 61, 0.72);
+  padding: 0 10px;
   font-size: 12px;
   font-weight: 800;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.toolbar-heading .ghost-button:hover {
+  border-color: rgba(22, 35, 61, 0.18);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
 }
 
 .muted-copy {
@@ -2326,17 +2388,27 @@ textarea:focus {
   color: var(--muted);
 }
 
-.theme-dark .sidebar-nav a {
-  color: var(--ink);
-}
-
-.theme-dark .feed-toolbar a {
-  color: var(--ink);
+.theme-dark .sidebar-nav a,
+.theme-dark .sidebar-nav a svg,
+.theme-dark .feed-toolbar a,
+.theme-dark .feed-toolbar a svg,
+.theme-dark .feed-toolbar button,
+.theme-dark .feed-toolbar button svg,
+.theme-dark .mobile-feed-header a,
+.theme-dark .mobile-feed-header button,
+.theme-dark .mobile-feed-header button svg,
+.theme-dark .mobile-page-topbar button,
+.theme-dark .mobile-page-topbar button svg,
+.theme-dark .mobile-bottom-nav a,
+.theme-dark .mobile-bottom-nav a svg,
+.theme-dark .mobile-bottom-nav button,
+.theme-dark .mobile-bottom-nav button svg {
+  color: #fff;
 }
 
 .theme-dark .feed-toolbar a:hover,
 .theme-dark .feed-toolbar a.active {
-  color: var(--accent);
+  color: #fff;
 }
 
 .theme-dark .brand-word,
@@ -2367,7 +2439,7 @@ textarea:focus {
 .theme-dark .filter-panel button.active,
 .theme-dark .topic-grid button.active {
   background: rgba(122, 164, 255, 0.16);
-  color: var(--accent);
+  color: #fff;
 }
 
 .theme-dark .sidebar-profile-stats button,
@@ -2540,9 +2612,17 @@ textarea:focus {
     background: #eef7ff;
   }
 
+  html:has(.theme-dark) {
+    background: #080d16;
+  }
+
   body {
     overflow: auto;
     background: #eef7ff;
+  }
+
+  body:has(.theme-dark) {
+    background: #080d16;
   }
 
   .app-shell {
@@ -2554,6 +2634,12 @@ textarea:focus {
     background:
       radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.95), transparent 32%),
       linear-gradient(180deg, #eef8ff 0%, #f8fbff 44%, #edf6ff 100%);
+  }
+
+  .app-shell.theme-dark {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(78, 111, 178, 0.22), transparent 30%),
+      linear-gradient(180deg, #080d16 0%, #101826 48%, #08101b 100%);
   }
 
   .ambient-overlay {
@@ -2645,6 +2731,17 @@ textarea:focus {
     transition:
       color 180ms ease,
       transform 180ms ease;
+    outline: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .mobile-bottom-nav a:focus,
+  .mobile-bottom-nav button:focus,
+  .mobile-bottom-nav a:focus-visible,
+  .mobile-bottom-nav button:focus-visible {
+    background: transparent;
+    outline: none;
   }
 
   .mobile-bottom-nav a.active,
@@ -2725,6 +2822,82 @@ textarea:focus {
 @media (max-width: 760px) {
   .desktop-shell {
     gap: 0;
+  }
+
+  .modal-backdrop {
+    z-index: 80;
+    align-items: center;
+    justify-items: center;
+    padding: max(12px, env(safe-area-inset-top)) 14px max(92px, calc(78px + env(safe-area-inset-bottom)));
+  }
+
+  .composer-modal {
+    gap: 10px;
+    width: min(420px, calc(100vw - 28px));
+    max-height: min(640px, calc(100dvh - 116px));
+    border-radius: 22px;
+    padding: 18px;
+    overflow-y: auto;
+  }
+
+  .composer-modal > div:first-of-type {
+    padding-right: 38px;
+  }
+
+  .composer-modal .eyebrow {
+    margin-bottom: 4px;
+  }
+
+  .composer-modal h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .composer-modal label,
+  .cover-field {
+    gap: 6px;
+    font-size: 13px;
+  }
+
+  .composer-modal input {
+    min-height: 42px;
+    max-height: 42px;
+    border-radius: 13px;
+    padding: 9px 12px;
+  }
+
+  .composer-modal textarea {
+    min-height: 118px;
+    max-height: 118px;
+    border-radius: 14px;
+    padding: 10px 12px;
+  }
+
+  .cover-upload {
+    min-height: 40px;
+    border-radius: 13px;
+  }
+
+  .cover-preview {
+    border-radius: 14px;
+  }
+
+  .cover-preview img {
+    aspect-ratio: 16 / 5;
+  }
+
+  .modal-actions {
+    bottom: -18px;
+    margin: 0 -18px -18px;
+    padding: 12px 18px max(16px, env(safe-area-inset-bottom));
+    border-radius: 0 0 22px 22px;
+  }
+
+  .modal-actions .ghost-button,
+  .modal-actions .primary-button {
+    min-height: 38px;
+    padding: 0 15px;
   }
 
   .composer-strip {
@@ -2882,6 +3055,31 @@ textarea:focus {
     overflow: visible;
   }
 
+  .detail-layout {
+    padding: 0 18px 18px;
+  }
+
+  .detail-layout .main-column {
+    gap: 12px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .mobile-detail-back {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 6px;
+    min-height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--ink);
+    padding: 0 12px;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(29, 55, 90, 0.08);
+  }
+
   .feed-frame {
     border-radius: 0;
     padding: 0 18px 18px;
@@ -2908,10 +3106,14 @@ textarea:focus {
   }
 
   .post-card:active {
-    transform: scale(0.985);
+    transform: none;
     box-shadow:
       0 5px 14px rgba(29, 55, 90, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.96);
+  }
+
+  .post-card.detail:active {
+    transform: none;
   }
 
   .post-meta {
@@ -2926,6 +3128,24 @@ textarea:focus {
   .post-copy {
     -webkit-line-clamp: 3;
     line-height: 1.65;
+  }
+
+  .post-card.detail .post-title,
+  .post-card.detail .post-copy {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+  }
+
+  .post-card.detail .post-title {
+    font-size: 22px;
+    line-height: 1.28;
+  }
+
+  .post-card.detail .post-copy {
+    font-size: 15px;
+    line-height: 1.82;
+    white-space: pre-wrap;
   }
 
   .post-actions {
@@ -2947,7 +3167,21 @@ textarea:focus {
     width: 100%;
     min-height: 34px;
     border-radius: 12px;
+    background: transparent !important;
     font-weight: 800;
+    outline: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .post-actions button:active,
+  .post-actions a:active,
+  .post-actions button:focus,
+  .post-actions a:focus,
+  .post-actions button:focus-visible,
+  .post-actions a:focus-visible {
+    background: transparent !important;
+    outline: none;
   }
 
   .post-actions svg {
@@ -2981,6 +3215,15 @@ textarea:focus {
     display: flex;
     align-items: center;
     flex-direction: row;
+  }
+
+  .notification-heading .ghost-button {
+    min-height: 30px;
+    padding: 0 10px;
+    border-color: rgba(22, 35, 61, 0.1);
+    background: rgba(255, 255, 255, 0.72);
+    color: rgba(22, 35, 61, 0.72);
+    font-size: 12px;
   }
 
   .profile-layout.own-profile > .profile-header {
@@ -3060,6 +3303,10 @@ textarea:focus {
     width: 100%;
     min-height: auto;
     padding: 0 18px 18px;
+  }
+
+  .theme-dark .mobile-me-page {
+    background: transparent;
   }
 
   .mobile-me-page > .mobile-page-topbar {
