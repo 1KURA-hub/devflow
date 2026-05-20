@@ -94,8 +94,13 @@ func seed(database *gorm.DB) error {
 		userIDs[item.Username] = user.ID
 	}
 
+	if err := database.Model(&model.Post{}).
+		Where("title = ?", "Redis 热 key 排查的三个层次").
+		Update("status", 0).Error; err != nil {
+		return err
+	}
+
 	posts := []seedPost{
-		{AuthorUsername: "liuchao", Title: "Redis 热 key 排查的三个层次", Content: "排查热 key 不要一上来就拆缓存，先从访问分布开始看。第一步用网关日志或 Redis monitor 抽样确认是不是单 key 过热；第二步看对象粒度，判断是大对象、热点用户还是活动入口；第三步再决定拆 key、本地缓存、异步预热或限流。真正危险的是没有数据就改结构，最后把一致性和回源压力一起放大。", CoverURL: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80", Tags: "Redis,缓存,性能优化", CreatedAgo: 2 * time.Hour},
 		{AuthorUsername: "gonight", Title: "Go 服务里我最常用的并发模式", Content: "业务 Go 服务里最常用的并发模式其实很少：工作池、errgroup、带缓冲 channel。工作池适合把外部调用限流，errgroup 适合聚合多个可取消任务，缓冲 channel 适合削峰但不能替代队列。设计时我会先定取消链路，再定并发数，最后才写 goroutine。否则一旦请求超时，后台任务还在跑，问题会非常隐蔽。", CoverURL: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80", Tags: "Go,并发编程,后端", CreatedAgo: 5 * time.Hour},
 		{AuthorUsername: "codingnav", Title: "Docker Compose 也能写得很工程化", Content: "很多小项目上线失败不是因为架构复杂，而是 Compose 写得太随意。生产配置里至少要有 env_file、命名 volume、healthcheck、明确端口暴露和依赖健康条件。数据库、Redis、RabbitMQ 这类状态服务不要依赖容器生命周期保存数据。把这些基础项写完整，小团队上线和回滚时会少掉很多临时排障。", CoverURL: "https://images.unsplash.com/photo-1605745341112-85968b19335b?auto=format&fit=crop&w=1200&q=80", Tags: "Docker,DevOps", CreatedAgo: 8 * time.Hour},
 		{AuthorUsername: "melon", Title: "复杂页面别急着加动效", Content: "复杂页面的高级感通常不是动效堆出来的，而是信息层级、滚动职责和间距稳定。主内容、侧边栏、弹窗如果各自承担不同滚动区域，就要让滚动条出现在用户预期的位置。按钮动效只在用户触发时出现，刷新或数据回填不应该播放动画。先把这些基本关系做好，视觉自然会安静很多。", CoverURL: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80", Tags: "前端,UI,体验", CreatedAgo: 12 * time.Hour},
@@ -168,9 +173,9 @@ func seed(database *gorm.DB) error {
 
 func seedInteractions(database *gorm.DB, now time.Time, users map[string]uint64, posts map[string]uint64) error {
 	likePairs := [][2]string{
-		{"lin", "Redis 热 key 排查的三个层次"},
-		{"codingnav", "Redis 热 key 排查的三个层次"},
-		{"gonight", "Redis 热 key 排查的三个层次"},
+		{"lin", "什么时候该把同步通知改成异步"},
+		{"codingnav", "什么时候该把同步通知改成异步"},
+		{"gonight", "什么时候该把同步通知改成异步"},
 		{"lin", "Go 服务里我最常用的并发模式"},
 		{"liuchao", "Docker Compose 也能写得很工程化"},
 		{"melon", "Feed 流项目最值得讲的不是列表接口"},
@@ -185,7 +190,7 @@ func seedInteractions(database *gorm.DB, now time.Time, users map[string]uint64,
 	}
 
 	favoritePairs := [][2]string{
-		{"lin", "Redis 热 key 排查的三个层次"},
+		{"lin", "什么时候该把同步通知改成异步"},
 		{"lin", "Go 服务里我最常用的并发模式"},
 		{"melon", "Docker Compose 也能写得很工程化"},
 	}
@@ -203,7 +208,7 @@ func seedInteractions(database *gorm.DB, now time.Time, users map[string]uint64,
 		Post    string
 		Content string
 	}{
-		{User: "lin", Post: "Redis 热 key 排查的三个层次", Content: "先量化访问分布这点很实用。"},
+		{User: "lin", Post: "什么时候该把同步通知改成异步", Content: "把通知拆出去之后，主链路确实清楚很多。"},
 		{User: "codingnav", Post: "Go 服务里我最常用的并发模式", Content: "取消链路确实比 goroutine 数量更容易出问题。"},
 		{User: "melon", Post: "Feed 流项目最值得讲的不是列表接口", Content: "这个角度很适合面试展开。"},
 	}
@@ -223,7 +228,7 @@ func seedInteractions(database *gorm.DB, now time.Time, users map[string]uint64,
 		}
 	}
 
-	postID := posts["Redis 热 key 排查的三个层次"]
+	postID := posts["什么时候该把同步通知改成异步"]
 	notifications := []model.Notification{
 		{UserID: users["liuchao"], ActorID: users["lin"], Type: "like", PostID: &postID, Content: "Lin 赞了你的动态", CreatedAt: now.Add(-70 * time.Minute)},
 		{UserID: users["liuchao"], ActorID: users["lin"], Type: "comment", PostID: &postID, Content: "Lin 评论了你的动态", CreatedAt: now.Add(-60 * time.Minute)},

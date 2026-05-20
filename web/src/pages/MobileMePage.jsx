@@ -20,21 +20,6 @@ const demoUsers = [
 ];
 const demoPosts = [
   {
-    id: "demo-post-1",
-    author_id: "guest",
-    author: guestUser,
-    title: "把点赞链路改回清晰写法",
-    content: "先让行为稳定，再考虑性能细节。接口返回越简单，前端判断越少。",
-    cover_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
-    tags: "Go,GORM",
-    like_count: 12,
-    favorite_count: 3,
-    comment_count: 2,
-    liked: false,
-    favorited: true,
-    created_at: new Date().toISOString()
-  },
-  {
     id: "demo-post-2",
     author_id: "demo-yu",
     author: demoUsers[1],
@@ -56,7 +41,7 @@ const demoNotifications = [
     type: "like",
     actor_id: "demo-liu",
     actor: demoUsers[0],
-    post_id: "demo-post-1",
+    post_id: "demo-post-2",
     post: demoPosts[0],
     content: "刘超 点赞了你的动态",
     is_read: false,
@@ -197,6 +182,13 @@ export function MobileMePage() {
     setStatPreview(type);
   }
 
+  async function markPreviewNotificationsRead() {
+    if (user) {
+      await api.markAllRead().catch(() => {});
+    }
+    setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
+  }
+
   return (
     <main className="mobile-me-page">
       <header className="mobile-page-topbar">
@@ -262,6 +254,7 @@ export function MobileMePage() {
           error={previewError}
           favorites={favorites}
           notifications={notifications}
+          onMarkNotificationsRead={markPreviewNotificationsRead}
         />
       ) : null}
 
@@ -377,14 +370,19 @@ function PostStatPreview({ items }) {
   );
 }
 
-function PreviewPanel({ type, loading, error, favorites, notifications }) {
+function PreviewPanel({ type, loading, error, favorites, notifications, onMarkNotificationsRead }) {
   const title = type === "favorites" ? "已收藏的动态" : "最新消息";
+  const unreadCount = notifications.filter((item) => !item.is_read).length;
 
   return (
     <section className="mobile-me-preview">
       <header>
-        <h2>{title}</h2>
-        {type === "notifications" ? <Link to="/notifications">全部</Link> : null}
+        <h2>{type === "notifications" ? `${title} ${unreadCount}` : title}</h2>
+        {type === "notifications" ? (
+          <button type="button" onClick={onMarkNotificationsRead} disabled={unreadCount === 0}>
+            全部已读
+          </button>
+        ) : null}
       </header>
       {loading ? <p className="mobile-me-empty">加载中...</p> : null}
       {error ? <p className="mobile-me-empty">{error}</p> : null}

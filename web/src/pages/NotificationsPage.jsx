@@ -8,6 +8,7 @@ export function NotificationsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const unreadCount = items.filter((item) => !item.is_read).length;
 
   useEffect(() => {
     api
@@ -70,7 +71,7 @@ export function NotificationsPage() {
           <h1>最近发生的互动</h1>
         </div>
         <button className="ghost-button" onClick={markAll}>
-          全部已读
+          全部已读 {unreadCount}
         </button>
       </header>
       <div className="surface notification-list">

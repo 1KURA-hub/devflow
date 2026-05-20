@@ -25,21 +25,6 @@ const demoAuthors = [
 ];
 const demoFeedPosts = [
   {
-    id: "demo-feed-1",
-    author_id: demoAuthors[0].id,
-    author: demoAuthors[0],
-    title: "把点赞链路改回清晰写法",
-    content: "先让接口行为稳定，再考虑性能细节。唯一索引兜底，服务层只关心是否真的创建或删除关系。",
-    cover_url: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
-    tags: "Go,GORM,并发编程",
-    like_count: 18,
-    favorite_count: 6,
-    comment_count: 4,
-    liked: false,
-    favorited: false,
-    created_at: new Date().toISOString()
-  },
-  {
     id: "demo-feed-2",
     author_id: demoAuthors[1].id,
     author: demoAuthors[1],
