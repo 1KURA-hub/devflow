@@ -56,7 +56,7 @@ DEPLOY_PATH=/go-course/devflow
 DEPLOY_SSH_KEY=<private key with access to the server>
 ```
 
-The deploy job uploads a git bundle to the server, updates the working tree from that bundle, rebuilds `app`, `web`, and `seed`, runs seed with `AUTO_MIGRATE=true`, then restarts `app` and `web`.
+The deploy job connects to the server over SSH, pulls the latest `main` branch, rebuilds `app`, `web`, and `seed`, runs seed with `AUTO_MIGRATE=true`, then restarts `app` and `web`.
 The server must already contain `.env.prod`; it is not stored in GitHub secrets or committed to the repository.
 
 The server exposes:

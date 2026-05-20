@@ -49,11 +49,6 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment: production
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Configure SSH
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -66,17 +61,6 @@ jobs:
           chmod 600 ~/.ssh/devflow_deploy_key
           ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-      - name: Create release bundle
-        run: git bundle create /tmp/devflow-main.bundle HEAD
-
-      - name: Upload release bundle
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-        run: |
-          scp -i ~/.ssh/devflow_deploy_key -P "${DEPLOY_PORT:-22}" /tmp/devflow-main.bundle "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/devflow-main.bundle"
-
       - name: Deploy over SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -87,10 +71,9 @@ jobs:
           ssh -i ~/.ssh/devflow_deploy_key -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" <<EOF
           set -euo pipefail
           cd "${DEPLOY_PATH}"
-          git fetch /tmp/devflow-main.bundle HEAD
-          git checkout -f FETCH_HEAD
-          git branch -f main FETCH_HEAD
+          git fetch origin main
           git checkout main
+          git pull --ff-only origin main
           docker compose --env-file .env.prod -f docker-compose.prod.yml build app web seed
           docker compose --env-file .env.prod -f docker-compose.prod.yml run --rm -e AUTO_MIGRATE=true seed
           docker compose --env-file .env.prod -f docker-compose.prod.yml up -d app web
