@@ -10,6 +10,9 @@ import (
 )
 
 var ErrCannotFollowSelf = errors.New("cannot follow self")
+var ErrAlreadyFollowed = errors.New("already followed")
+
+const followingFeedInboxRebuildLimit = 500
 
 type FollowService struct {
 	follows       *repository.FollowRepository
@@ -51,11 +54,14 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 		return err
 	}
 	created, err := s.follows.Add(ctx, followerID, followeeID)
-	if err != nil || !created {
+	if err != nil {
 		return err
 	}
+	if !created {
+		return ErrAlreadyFollowed
+	}
 	_ = s.relations.AddFollow(ctx, followerID, followeeID)
-	_ = s.inboxes.Delete(ctx, followerID)
+	_ = s.backfillInboxAfterFollow(ctx, followerID, followeeID)
 	if s.notifications != nil {
 		return s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:  followeeID,
@@ -146,19 +152,58 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 		return buildPostListResult(posts, limit), nil
 	}
 
-	if postIDs, available, err := s.inboxes.PostIDs(ctx, userID, input.Cursor, int64(limit+1)); err == nil && available && len(postIDs) > limit {
-		posts, err := s.posts.ListByIDs(ctx, postIDs)
-		if err != nil {
-			return nil, err
+	rebuildInbox := false
+	if postIDs, available, err := s.inboxes.PostIDs(ctx, userID, input.Cursor, int64(limit+1)); err == nil {
+		if available {
+			posts, err := s.posts.ListByIDs(ctx, postIDs)
+			if err != nil {
+				return nil, err
+			}
+			return buildPostListResult(orderPostsByIDs(posts, postIDs), limit), nil
 		}
-		return buildPostListResult(orderPostsByIDs(posts, postIDs), limit), nil
+		if !available && input.Cursor == nil {
+			rebuildInbox = true
+		}
 	}
 
-	posts, err := s.posts.ListByAuthorIDs(ctx, followingIDs, input.Cursor, limit+1)
+	queryLimit := limit + 1
+	if rebuildInbox {
+		queryLimit = followingFeedInboxRebuildLimit + 1
+	}
+	posts, err := s.posts.ListByAuthorIDs(ctx, followingIDs, input.Cursor, queryLimit)
 	if err != nil {
 		return nil, err
 	}
+	if rebuildInbox {
+		_ = s.inboxes.Rebuild(ctx, userID, feedInboxItems(posts))
+	}
 	return buildPostListResult(posts, limit), nil
+}
+
+func (s *FollowService) backfillInboxAfterFollow(ctx context.Context, followerID, followeeID uint64) error {
+	exists, err := s.inboxes.Exists(ctx, followerID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	posts, err := s.posts.ListByAuthor(ctx, followeeID, nil, followingFeedInboxRebuildLimit)
+	if err != nil {
+		return err
+	}
+	return s.inboxes.AddPosts(ctx, followerID, feedInboxItems(posts))
+}
+
+func feedInboxItems(posts []model.Post) []cache.FeedInboxItem {
+	items := make([]cache.FeedInboxItem, 0, len(posts))
+	for _, post := range posts {
+		items = append(items, cache.FeedInboxItem{
+			PostID:    post.ID,
+			CreatedAt: post.CreatedAt,
+		})
+	}
+	return items
 }
 
 func (s *FollowService) listFollowingIDs(ctx context.Context, userID uint64) ([]uint64, error) {

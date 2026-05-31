@@ -129,32 +129,31 @@ func (s *AuthService) UpdateProfile(ctx context.Context, input UpdateProfileInpu
 	if input.UserID == 0 {
 		return nil, ErrInvalidInput
 	}
-	user, err := s.users.FindByID(ctx, input.UserID)
-	if err != nil {
-		return nil, err
-	}
+
+	updates := map[string]any{}
+
 	if input.Nickname != nil {
 		nickname := strings.TrimSpace(*input.Nickname)
 		if nickname == "" || len(nickname) > 64 {
 			return nil, ErrInvalidInput
 		}
-		user.Nickname = nickname
+		updates["nickname"] = nickname
 	}
 	if input.Bio != nil {
 		bio := strings.TrimSpace(*input.Bio)
 		if len(bio) > 255 {
 			return nil, ErrInvalidInput
 		}
-		user.Bio = bio
+		updates["bio"] = bio
 	}
 	if input.AvatarURL != nil {
 		avatarURL := strings.TrimSpace(*input.AvatarURL)
 		if len(avatarURL) > 512 {
 			return nil, ErrInvalidInput
 		}
-		user.AvatarURL = avatarURL
+		updates["avatar_url"] = avatarURL
 	}
-	if err := s.users.UpdateProfile(ctx, user); err != nil {
+	if err := s.users.UpdateProfile(ctx, input.UserID, updates); err != nil {
 		return nil, err
 	}
 	return s.users.FindByID(ctx, input.UserID)

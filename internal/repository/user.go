@@ -66,13 +66,12 @@ func (r *UserRepository) ListRecommended(ctx context.Context, viewerID uint64, l
 	return users, nil
 }
 
-func (r *UserRepository) UpdateProfile(ctx context.Context, user *model.User) error {
+func (r *UserRepository) UpdateProfile(ctx context.Context, id uint64, updates map[string]any) error {
+	if len(updates) == 0 {
+		return nil
+	}
 	return r.db.WithContext(ctx).
 		Model(&model.User{}).
-		Where("id = ?", user.ID).
-		Updates(map[string]any{
-			"nickname":   user.Nickname,
-			"bio":        user.Bio,
-			"avatar_url": user.AvatarURL,
-		}).Error
+		Where("id = ?", id).
+		Updates(updates).Error
 }
