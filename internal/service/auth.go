@@ -60,7 +60,9 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 	if username == "" || password == "" || nickname == "" {
 		return nil, ErrInvalidInput
 	}
-	if len(username) < 3 || len(username) > 64 || len(password) < 6 || len(nickname) > 64 {
+	if len(username) < 3 || len(username) > 12 ||
+		len(password) < 6 || len(password) > 16 ||
+		len(nickname) < 3 || len(nickname) > 12 {
 		return nil, ErrInvalidInput
 	}
 
@@ -134,7 +136,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, input UpdateProfileInpu
 
 	if input.Nickname != nil {
 		nickname := strings.TrimSpace(*input.Nickname)
-		if nickname == "" || len(nickname) > 64 {
+		if len(nickname) < 3 || len(nickname) > 12 {
 			return nil, ErrInvalidInput
 		}
 		updates["nickname"] = nickname
