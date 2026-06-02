@@ -41,3 +41,31 @@ def test_following_feed_cold_start_falls_back_to_latest(published_post, second_u
     assert published_post["id"] in ids, (
         "未关注任何人时应降级为 latest feed，但响应里看不到 published_post"
     )
+
+
+def test_latest_feed_pagination_by_cursor(registered_user):
+    """limit=1 取第一页拿到 next_cursor，再用 cursor 取下一页，两页 id 不重复。
+
+    覆盖游标分页契约：has_more=true 时返回 next_cursor，按其翻页应拿到更旧的帖。
+    """
+    # 至少造 3 篇帖，保证有多页
+    created_ids = []
+    for i in range(3):
+        r = registered_user.post.create(title=f"page-{i}", content="pagination test")
+        assert r.ok
+        created_ids.append(r.data["id"])
+
+    first = registered_user.feed.latest(limit=1)
+    assert first.ok
+    assert first.data["has_more"] is True, "limit=1 且帖子充足时应 has_more=true"
+    assert first.data.get("next_cursor"), "has_more=true 时应返回 next_cursor"
+    assert len(first.data["items"]) == 1
+    first_id = first.data["items"][0]["id"]
+
+    cursor = first.data["next_cursor"]
+    second = registered_user.feed.latest(limit=1, cursor=cursor)
+    assert second.ok
+    assert len(second.data["items"]) == 1
+    second_id = second.data["items"][0]["id"]
+
+    assert first_id != second_id, "翻页后不应再次返回上一页的同一条帖子"

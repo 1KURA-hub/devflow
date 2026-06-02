@@ -62,3 +62,35 @@ def test_unlike_never_liked_is_idempotent(published_post, second_user):
     """取消一个没点过的赞应安静返回 200，不报错。"""
     resp = second_user.interaction.unlike(published_post["id"])
     assert resp.ok, f"取消未点赞应幂等: {resp.status_code} {resp.message}"
+
+
+@pytest.mark.idempotent
+def test_concurrent_like_counts_once(published_post, second_user):
+    """同一用户并发点赞同一帖子多次，最终 like_count 必须等于 1。
+
+    这是对 (user_id, post_id) 唯一索引 + ON CONFLICT DO NOTHING 在并发下的压测：
+    无论多少请求同时打进来，计数都不能被双加。
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    post_id = published_post["id"]
+
+    # 每个线程用独立 client（共享同一 token），避免 requests.Session 非线程安全问题
+    def _like_once():
+        client = second_user.http.clone()
+        client.set_token(second_user.token)
+        from clients.interaction import InteractionClient
+
+        return InteractionClient(client).like(post_id)
+
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        results = list(pool.map(lambda _: _like_once(), range(10)))
+
+    assert all(r.status_code in (200, 409) for r in results), (
+        "并发点赞每个请求都应被安全处理（200 幂等成功）"
+    )
+
+    detail = second_user.post.get(post_id)
+    assert detail.data["like_count"] == 1, (
+        f"并发点赞后 like_count 必须为 1，实际 {detail.data['like_count']}（计数被双加说明存在并发缺陷）"
+    )
