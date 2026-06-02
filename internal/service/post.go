@@ -98,7 +98,8 @@ func (s *PostService) Create(ctx context.Context, input CreatePostInput) (*model
 			return post, nil
 		}
 	}
-	_ = s.DistributeFeedNow(ctx, post.AuthorID, post.ID, post.CreatedAt)
+	logSideEffectErr("feed_distribute_sync", s.DistributeFeedNow(ctx, post.AuthorID, post.ID, post.CreatedAt),
+		"post_id", post.ID, "author_id", post.AuthorID)
 	return post, nil
 }
 
@@ -111,7 +112,8 @@ func (s *PostService) DistributeFeedNow(ctx context.Context, authorID, postID ui
 		return err
 	}
 	for _, followerID := range followerIDs {
-		_ = s.inboxes.AddPost(ctx, followerID, postID, createdAt)
+		logSideEffectErr("inbox_add", s.inboxes.AddPost(ctx, followerID, postID, createdAt),
+			"follower_id", followerID, "post_id", postID)
 	}
 	return nil
 }
@@ -137,7 +139,8 @@ func (s *PostService) Delete(ctx context.Context, userID, postID uint64) error {
 	if err := s.posts.DeleteByID(ctx, postID); err != nil {
 		return err
 	}
-	_ = s.hotPosts.SetScore(ctx, postID, 0)
+	logSideEffectErr("hot_score_delete", s.hotPosts.SetScore(ctx, postID, 0),
+		"post_id", postID)
 	return nil
 }
 
@@ -242,6 +245,28 @@ func (s *PostService) listFollowerIDs(ctx context.Context, userID uint64) ([]uin
 
 func hotScore(likeCount, favoriteCount, commentCount int64) int64 {
 	return likeCount*3 + favoriteCount*5 + commentCount*4
+}
+
+// HotPostsRebuildLimit 是定时重建时从 MySQL 取出的 topN 数量。
+// 重建是按完整热度分排序，覆盖 Redis 中的 hot_posts ZSET。
+const HotPostsRebuildLimit = 200
+
+// RebuildHotPosts 从 MySQL 拉取 topN 帖子，按统一公式算分并整体重写 Redis 热门榜，
+// 解决缓存丢失/淘汰后被零散 ZADD 填出"半截榜"的问题。
+func (s *PostService) RebuildHotPosts(ctx context.Context) error {
+	posts, err := s.posts.ListHot(ctx, HotPostsRebuildLimit)
+	if err != nil {
+		return err
+	}
+	items := make([]cache.HotPostItem, 0, len(posts))
+	for _, p := range posts {
+		score := hotScore(p.LikeCount, p.FavoriteCount, p.CommentCount)
+		if score <= 0 {
+			continue
+		}
+		items = append(items, cache.HotPostItem{PostID: p.ID, Score: score})
+	}
+	return s.hotPosts.Rebuild(ctx, items)
 }
 
 func normalizeTags(tags string) string {
