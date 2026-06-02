@@ -29,12 +29,13 @@ func StartFeedConsumer(ctx context.Context, broker *mq.Broker, posts *service.Po
 				}
 				var event mq.PostPublishedEvent
 				if err := json.Unmarshal(delivery.Body, &event); err != nil {
-					log.Printf("feed worker decode event: %v", err)
+					log.Printf("feed worker decode event failed: body_len=%d err=%v", len(delivery.Body), err)
 					_ = delivery.Nack(false, false)
 					continue
 				}
 				if err := posts.DistributeFeedNow(ctx, event.AuthorID, event.PostID, event.CreatedAt); err != nil {
-					log.Printf("feed worker distribute feed: event_id=%s err=%v", event.EventID, err)
+					log.Printf("feed worker distribute failed: event_id=%s author_id=%d post_id=%d err=%v",
+						event.EventID, event.AuthorID, event.PostID, err)
 					_ = delivery.Nack(false, false)
 					continue
 				}

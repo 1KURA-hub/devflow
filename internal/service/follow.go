@@ -60,8 +60,10 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 	if !created {
 		return ErrAlreadyFollowed
 	}
-	_ = s.relations.AddFollow(ctx, followerID, followeeID)
-	_ = s.backfillInboxAfterFollow(ctx, followerID, followeeID)
+	logSideEffectErr("relation_add", s.relations.AddFollow(ctx, followerID, followeeID),
+		"follower_id", followerID, "followee_id", followeeID)
+	logSideEffectErr("inbox_backfill", s.backfillInboxAfterFollow(ctx, followerID, followeeID),
+		"follower_id", followerID, "followee_id", followeeID)
 	if s.notifications != nil {
 		return s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:  followeeID,
@@ -84,8 +86,10 @@ func (s *FollowService) Unfollow(ctx context.Context, followerID, followeeID uin
 	if err != nil || !deleted {
 		return err
 	}
-	_ = s.relations.RemoveFollow(ctx, followerID, followeeID)
-	_ = s.inboxes.Delete(ctx, followerID)
+	logSideEffectErr("relation_remove", s.relations.RemoveFollow(ctx, followerID, followeeID),
+		"follower_id", followerID, "followee_id", followeeID)
+	logSideEffectErr("inbox_delete", s.inboxes.Delete(ctx, followerID),
+		"follower_id", followerID)
 	return nil
 }
 

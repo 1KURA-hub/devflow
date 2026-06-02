@@ -108,7 +108,8 @@ func (s *NotificationService) CreateNow(ctx context.Context, input CreateNotific
 	if !created {
 		return nil
 	}
-	_ = s.counter.IncrementIfExists(ctx, input.UserID)
+	logSideEffectErr("unread_increment", s.counter.IncrementIfExists(ctx, input.UserID),
+		"user_id", input.UserID, "type", input.Type)
 	return nil
 }
 

@@ -40,7 +40,8 @@ func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) er
 	if err != nil || !created {
 		return err
 	}
-	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount+1, post.FavoriteCount, post.CommentCount))
+	logSideEffectErr("hot_score_like", s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount+1, post.FavoriteCount, post.CommentCount)),
+		"post_id", postID, "user_id", userID)
 	if s.notifications == nil {
 		return nil
 	}
@@ -65,7 +66,8 @@ func (s *InteractionService) Unlike(ctx context.Context, userID, postID uint64) 
 	if err != nil || !deleted {
 		return err
 	}
-	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount-1, post.FavoriteCount, post.CommentCount))
+	logSideEffectErr("hot_score_unlike", s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount-1, post.FavoriteCount, post.CommentCount)),
+		"post_id", postID, "user_id", userID)
 	return nil
 }
 
@@ -84,7 +86,8 @@ func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64
 	if err != nil || !created {
 		return err
 	}
-	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount+1, post.CommentCount))
+	logSideEffectErr("hot_score_favorite", s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount+1, post.CommentCount)),
+		"post_id", postID, "user_id", userID)
 	if s.notifications == nil {
 		return nil
 	}
@@ -109,7 +112,8 @@ func (s *InteractionService) Unfavorite(ctx context.Context, userID, postID uint
 	if err != nil || !deleted {
 		return err
 	}
-	_ = s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount-1, post.CommentCount))
+	logSideEffectErr("hot_score_unfavorite", s.hotPosts.SetScore(ctx, postID, hotScore(post.LikeCount, post.FavoriteCount-1, post.CommentCount)),
+		"post_id", postID, "user_id", userID)
 	return nil
 }
 

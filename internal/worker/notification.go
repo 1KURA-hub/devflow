@@ -29,7 +29,7 @@ func StartNotificationConsumer(ctx context.Context, broker *mq.Broker, notificat
 				}
 				var event mq.NotificationEvent
 				if err := json.Unmarshal(delivery.Body, &event); err != nil {
-					log.Printf("notification worker decode event: %v", err)
+					log.Printf("notification worker decode event failed: body_len=%d err=%v", len(delivery.Body), err)
 					_ = delivery.Nack(false, false)
 					continue
 				}
@@ -42,7 +42,8 @@ func StartNotificationConsumer(ctx context.Context, broker *mq.Broker, notificat
 					CommentID: event.CommentID,
 					Content:   event.Content,
 				}); err != nil {
-					log.Printf("notification worker create notification: event_id=%s err=%v", event.EventID, err)
+					log.Printf("notification worker create failed: event_id=%s type=%s user_id=%d actor_id=%d err=%v",
+						event.EventID, event.Type, event.UserID, event.ActorID, err)
 					_ = delivery.Nack(false, false)
 					continue
 				}

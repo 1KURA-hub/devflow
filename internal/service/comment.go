@@ -68,7 +68,8 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	if err := s.comments.Create(ctx, comment); err != nil {
 		return nil, err
 	}
-	_ = s.hotPosts.SetScore(ctx, input.PostID, hotScore(post.LikeCount, post.FavoriteCount, post.CommentCount+1))
+	logSideEffectErr("hot_score_comment", s.hotPosts.SetScore(ctx, input.PostID, hotScore(post.LikeCount, post.FavoriteCount, post.CommentCount+1)),
+		"post_id", input.PostID, "user_id", input.UserID)
 	if s.notifications != nil {
 		if err := s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:    post.AuthorID,
