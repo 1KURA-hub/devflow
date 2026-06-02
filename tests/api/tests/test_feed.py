@@ -1,0 +1,43 @@
+"""Feed 链路：latest / hot / following 三种 feed 的基础契约。
+
+业务规则：
+- /api/feed/latest：按时间倒序返回所有公开帖
+- /api/feed/hot：按 like*3 + favorite*5 + comment*4 排序（Redis ZSET 或 MySQL 回退）
+- /api/feed/following：没关注任何人时 *降级* 返回 latest（FollowService.ListFollowingFeed 内置冷启动逻辑）
+"""
+
+import pytest
+
+
+@pytest.mark.smoke
+def test_feed_latest_contains_recent_post(published_post, registered_user):
+    """刚发的帖子应出现在 latest feed 第一页中。"""
+    resp = registered_user.feed.latest(limit=50)
+    assert resp.ok
+
+    ids = [item["id"] for item in resp.data["items"]]
+    assert published_post["id"] in ids, "latest feed 应包含刚发布的帖子"
+
+
+def test_feed_hot_returns_list_structure(registered_user):
+    """hot feed 结构正确即可（实际排序依赖互动数据，不强校验顺序）。"""
+    resp = registered_user.feed.hot()
+    assert resp.ok
+    assert "items" in resp.data
+    assert isinstance(resp.data["items"], list)
+    assert "has_more" in resp.data
+
+
+def test_following_feed_cold_start_falls_back_to_latest(published_post, second_user):
+    """新用户未关注任何人时，/feed/following 应降级为 latest，避免空 feed。
+
+    这是 devflow 的冷启动设计：FollowService.ListFollowingFeed 检测到无 follow 关系
+    时直接走 PostService.ListLatest，保证新用户首屏不空。
+    """
+    resp = second_user.feed.following(limit=50)
+    assert resp.ok
+
+    ids = [item["id"] for item in resp.data["items"]]
+    assert published_post["id"] in ids, (
+        "未关注任何人时应降级为 latest feed，但响应里看不到 published_post"
+    )
