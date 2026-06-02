@@ -1,5 +1,7 @@
 """点赞 / 收藏 接口封装。"""
 
+from typing import Optional
+
 from clients.base import ApiResponse, BaseClient
 
 
@@ -18,3 +20,7 @@ class InteractionClient:
 
     def unfavorite(self, post_id: int) -> ApiResponse:
         return self.http.delete(f"/api/posts/{post_id}/favorite")
+
+    def my_favorites(self, limit: Optional[int] = None) -> ApiResponse:
+        params = {"limit": limit} if limit else None
+        return self.http.get("/api/me/favorites", params=params)

@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from clients.auth import AuthClient
 from clients.base import BaseClient
+from clients.comment import CommentClient
 from clients.feed import FeedClient
 from clients.follow import FollowClient
 from clients.interaction import InteractionClient
@@ -42,6 +43,7 @@ class TestUser:
     follow: FollowClient
     feed: FeedClient
     notification: NotificationClient
+    comment: CommentClient
 
 
 def _build_user_clients(http: BaseClient) -> dict:
@@ -52,6 +54,7 @@ def _build_user_clients(http: BaseClient) -> dict:
         "follow": FollowClient(http),
         "feed": FeedClient(http),
         "notification": NotificationClient(http),
+        "comment": CommentClient(http),
     }
 
 
@@ -73,14 +76,17 @@ def server_ready():
 
 @pytest.fixture()
 def unique_username() -> str:
-    """每条用例独立用户名，避免重复注册冲突。"""
-    return f"u_{uuid.uuid4().hex[:12]}"
+    """每条用例独立用户名，避免重复注册冲突。
+
+    用户名长度上限为 12（见 auth service 校验），这里取 u_ + 10 位 hex = 12 字符。
+    """
+    return f"u_{uuid.uuid4().hex[:10]}"
 
 
 def _register(unique_name: str) -> TestUser:
     http = BaseClient()
     auth = AuthClient(http)
-    nickname = f"nick_{unique_name[-6:]}"
+    nickname = f"n_{unique_name[-6:]}"
     resp = auth.register(unique_name, DEFAULT_PASSWORD, nickname)
     assert resp.ok, f"注册失败 {resp.status_code} {resp.message}"
     token = resp.data["token"]
@@ -105,7 +111,7 @@ def registered_user(server_ready, unique_username) -> TestUser:
 
 @pytest.fixture()
 def second_user(server_ready) -> TestUser:
-    return _register(f"u_{uuid.uuid4().hex[:12]}")
+    return _register(f"u_{uuid.uuid4().hex[:10]}")
 
 
 @pytest.fixture()
