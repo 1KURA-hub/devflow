@@ -158,6 +158,9 @@ func parseUserListQuery(c *gin.Context) (service.UserListInput, error) {
 
 func writeFollowError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, service.ErrAlreadyFollowed):
+		// 幂等：重复关注按成功处理，与重复点赞行为一致
+		response.OK(c, nil)
 	case errors.Is(err, service.ErrInvalidInput):
 		response.Error(c, http.StatusBadRequest, "invalid follow input")
 	case errors.Is(err, service.ErrCannotFollowSelf):
