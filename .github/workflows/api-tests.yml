@@ -1,0 +1,118 @@
+name: API Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: devflow-api-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-tests:
+    name: pytest 接口自动化
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: devflow
+          MYSQL_USER: devflow
+          MYSQL_PASSWORD: devflow
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      MYSQL_DSN: "devflow:devflow@tcp(127.0.0.1:3306)/devflow?charset=utf8mb4&parseTime=True&loc=Local"
+      REDIS_ADDR: "127.0.0.1:6379"
+      RABBITMQ_URL: ""
+      AUTO_MIGRATE: "true"
+      JWT_SECRET: "ci-secret"
+      HTTP_ADDR: ":8080"
+      DEVFLOW_BASE_URL: "http://127.0.0.1:8080"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: tests/api/requirements.txt
+
+      - name: Install Python deps
+        run: pip install -r tests/api/requirements.txt
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 30); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uroot -proot --silent; then
+              echo "mysql ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "mysql not ready" && exit 1
+
+      - name: Build devflow server
+        run: go build -o ./devflow-server ./cmd/server
+
+      - name: Start devflow server
+        run: |
+          nohup ./devflow-server > server.log 2>&1 &
+          echo $! > server.pid
+
+      - name: Wait for server /healthz
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/healthz >/dev/null; then
+              echo "server ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "===== server.log ====="; cat server.log; exit 1
+
+      - name: Run pytest
+        working-directory: tests/api
+        run: pytest --junitxml=report.xml
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-test-report
+          path: tests/api/report.xml
+
+      - name: Dump server log on failure
+        if: failure()
+        run: cat server.log || true
+
+      - name: Stop devflow server
+        if: always()
+        run: kill $(cat server.pid) 2>/dev/null || true
