@@ -77,6 +77,23 @@ def test_mark_all_read_clears_unread(published_post, second_user):
     assert _unread(author) == 0, "read-all 后未读数应为 0"
 
 
+@pytest.mark.cross
+def test_notification_item_has_full_fields(published_post, second_user):
+    """点赞触发的通知项应包含 id/type/actor_id/post_id/is_read/created_at 等字段。"""
+    author = published_post["author"]
+    assert second_user.interaction.like(published_post["id"]).ok
+
+    item = poll_until(lambda: _latest_notification(author))
+    assert item, "未拿到点赞通知"
+
+    for field in ("id", "type", "actor_id", "post_id", "is_read", "created_at"):
+        assert field in item, f"通知应包含字段 {field}"
+    assert item["type"] == "like"
+    assert item["actor_id"] == second_user.user_id
+    assert item["post_id"] == published_post["id"]
+    assert item["is_read"] is False
+
+
 def _latest_notification(user):
     resp = user.notification.list()
     if not resp.ok:

@@ -64,6 +64,24 @@ def test_unlike_never_liked_is_idempotent(published_post, second_user):
     assert resp.ok, f"取消未点赞应幂等: {resp.status_code} {resp.message}"
 
 
+def test_like_nonexistent_post_not_found(second_user):
+    """对不存在的 post 点赞应返回 404。"""
+    resp = second_user.interaction.like(9_999_999_999)
+    assert resp.status_code == 404, f"期望 404，实际 {resp.status_code} {resp.message}"
+
+
+def test_like_after_unlike_recounts(published_post, second_user):
+    """点赞 → 取消 → 再点赞，最终 like_count 应回到 1。"""
+    post_id = published_post["id"]
+    assert second_user.interaction.like(post_id).ok
+    assert second_user.interaction.unlike(post_id).ok
+    assert second_user.interaction.like(post_id).ok
+
+    detail = second_user.post.get(post_id)
+    assert detail.data["like_count"] == 1
+    assert detail.data["liked"] is True
+
+
 @pytest.mark.idempotent
 def test_concurrent_like_counts_once(published_post, second_user):
     """同一用户并发点赞同一帖子多次，最终 like_count 必须等于 1。

@@ -152,3 +152,21 @@ def test_register_missing_field_bad_request(server_ready, missing):
     resp = auth.register(fields["username"], fields["password"], fields["nickname"])
 
     assert resp.status_code == 400, f"{missing} 为空应返回 400，实际 {resp.status_code}"
+
+
+@pytest.mark.parametrize(
+    "username, password",
+    [("", "anything"), ("anyone", ""), ("", "")],
+)
+def test_login_empty_field_bad_request(server_ready, username, password):
+    """登录用户名或密码为空都应返回 400。"""
+    resp = AuthClient(BaseClient()).login(username, password)
+    assert resp.status_code == 400, f"期望 400，实际 {resp.status_code} {resp.message}"
+
+
+def test_invalid_token_unauthorized(server_ready):
+    """携带伪造的 token 访问需登录接口应返回 401。"""
+    http = BaseClient()
+    http.set_token("invalid.token.value")
+    resp = AuthClient(http).me()
+    assert resp.status_code == 401, f"期望 401，实际 {resp.status_code} {resp.message}"

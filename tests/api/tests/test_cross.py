@@ -85,3 +85,96 @@ def test_like_triggers_like_notification(published_post, second_user):
         interval=NOTIFICATION_POLL_INTERVAL,
     )
     assert found, "未在超时窗口内看到 like 通知，可能 MQ 未消费或链路断开"
+
+
+def test_post_supports_like_favorite_comment_together(published_post, second_user):
+    """同一帖被点赞 + 收藏 + 评论后，三个计数都应为 1。"""
+    post_id = published_post["id"]
+    assert second_user.interaction.like(post_id).ok
+    assert second_user.interaction.favorite(post_id).ok
+    assert second_user.comment.create(post_id, "nice").ok
+
+    detail = second_user.post.get(post_id)
+    assert detail.data["like_count"] == 1
+    assert detail.data["favorite_count"] == 1
+    assert detail.data["comment_count"] == 1
+
+
+@pytest.mark.cross
+def test_follow_triggers_follow_notification(registered_user, second_user):
+    """B 关注 A → A 应收到 type=follow 的通知。"""
+    author = registered_user
+    follower = second_user
+    assert follower.follow.follow(author.user_id).ok
+
+    def _check():
+        resp = author.notification.list()
+        if not resp.ok:
+            return None
+        for item in resp.data.get("items", []):
+            if (
+                item.get("type") == "follow"
+                and item.get("actor_id") == follower.user_id
+            ):
+                return item
+        return None
+
+    found = poll_until(
+        _check,
+        timeout=NOTIFICATION_POLL_TIMEOUT,
+        interval=NOTIFICATION_POLL_INTERVAL,
+    )
+    assert found, "未在超时窗口内看到 follow 通知"
+
+
+@pytest.mark.cross
+def test_comment_triggers_comment_notification(published_post, second_user):
+    """B 评论 A 的帖 → A 应收到 type=comment 的通知。"""
+    author = published_post["author"]
+    assert second_user.comment.create(published_post["id"], "nice").ok
+
+    def _check():
+        resp = author.notification.list()
+        if not resp.ok:
+            return None
+        for item in resp.data.get("items", []):
+            if (
+                item.get("type") == "comment"
+                and item.get("actor_id") == second_user.user_id
+                and item.get("post_id") == published_post["id"]
+            ):
+                return item
+        return None
+
+    found = poll_until(
+        _check,
+        timeout=NOTIFICATION_POLL_TIMEOUT,
+        interval=NOTIFICATION_POLL_INTERVAL,
+    )
+    assert found, "未在超时窗口内看到 comment 通知"
+
+
+@pytest.mark.cross
+def test_follow_backfills_followee_existing_posts(registered_user, second_user):
+    """A 关注 B 时，B 已有的旧帖应能在 A 的 following feed 中出现（inbox 回填）。"""
+    author = registered_user
+    follower = second_user
+
+    old = author.post.create(title="old", content="existed before follow")
+    assert old.ok
+    old_id = old.data["id"]
+
+    assert follower.follow.follow(author.user_id).ok
+
+    def _check():
+        feed = follower.feed.following(limit=50)
+        if not feed.ok:
+            return False
+        return old_id in [item["id"] for item in feed.data["items"]]
+
+    matched = poll_until(
+        _check,
+        timeout=NOTIFICATION_POLL_TIMEOUT,
+        interval=NOTIFICATION_POLL_INTERVAL,
+    )
+    assert matched, "关注后未看到被关注者的旧帖（inbox 回填可能失败）"

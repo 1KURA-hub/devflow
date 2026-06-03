@@ -6,7 +6,41 @@
 - /api/feed/following：没关注任何人时 *降级* 返回 latest（FollowService.ListFollowingFeed 内置冷启动逻辑）
 """
 
+import time
+import uuid
+
 import pytest
+
+from clients.auth import AuthClient
+from clients.base import BaseClient
+from clients.post import PostClient
+from config import (
+    DEFAULT_PASSWORD,
+    NOTIFICATION_POLL_INTERVAL,
+    NOTIFICATION_POLL_TIMEOUT,
+)
+
+
+def _poll(predicate, *, timeout=NOTIFICATION_POLL_TIMEOUT, interval=NOTIFICATION_POLL_INTERVAL):
+    deadline = time.time() + timeout
+    last = None
+    while time.time() < deadline:
+        last = predicate()
+        if last:
+            return last
+        time.sleep(interval)
+    return last
+
+
+def _register_post_client():
+    """注册一个新用户，返回其 PostClient（用于构造与现有 fixture 无关的第三方用户）。"""
+    http = BaseClient()
+    username = f"u_{uuid.uuid4().hex[:10]}"
+    nickname = f"n_{username[-6:]}"
+    resp = AuthClient(http).register(username, DEFAULT_PASSWORD, nickname)
+    assert resp.ok, f"注册失败 {resp.status_code} {resp.message}"
+    http.set_token(resp.data["token"])
+    return PostClient(http)
 
 
 @pytest.mark.smoke
@@ -69,3 +103,37 @@ def test_latest_feed_pagination_by_cursor(registered_user):
     second_id = second.data["items"][0]["id"]
 
     assert first_id != second_id, "翻页后不应再次返回上一页的同一条帖子"
+
+
+def test_following_feed_only_contains_followees_posts(registered_user, second_user):
+    """A 关注 B 后，A 的 following feed 应含 B 的帖、不含未关注用户 C 的帖。"""
+    follower = second_user
+    followee = registered_user
+    stranger_post = _register_post_client()
+
+    b_post = followee.post.create(title="from-b", content="b post").data["id"]
+    c_post = stranger_post.create(title="from-c", content="c post").data["id"]
+
+    assert follower.follow.follow(followee.user_id).ok
+
+    def _check():
+        feed = follower.feed.following(limit=50)
+        if not feed.ok:
+            return None
+        ids = [item["id"] for item in feed.data["items"]]
+        return ids if b_post in ids else None
+
+    ids = _poll(_check)
+    assert ids, "following feed 未包含被关注者 B 的帖"
+    assert c_post not in ids, "following feed 不应包含未关注用户 C 的帖"
+
+
+def test_hot_feed_contains_liked_post(published_post, second_user):
+    """B 点赞 A 的帖后，hot feed 列表中应能看到该帖。"""
+    post_id = published_post["id"]
+    assert second_user.interaction.like(post_id).ok
+
+    resp = second_user.feed.hot(limit=50)
+    assert resp.ok
+    ids = [item["id"] for item in resp.data["items"]]
+    assert post_id in ids, "点赞后 hot feed 应包含该帖"

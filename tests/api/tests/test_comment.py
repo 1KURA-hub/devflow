@@ -55,3 +55,9 @@ def test_create_comment_without_auth_unauthorized(published_post, anonymous_clie
 
     resp = CommentClient(anonymous_client).create(published_post["id"], "hi")
     assert resp.status_code == 401
+
+
+def test_comment_nonexistent_post_not_found(second_user):
+    """对不存在的 post 评论应返回 404。"""
+    resp = second_user.comment.create(9_999_999_999, "hello")
+    assert resp.status_code == 404, f"期望 404，实际 {resp.status_code} {resp.message}"
