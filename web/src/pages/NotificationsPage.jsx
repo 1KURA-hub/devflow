@@ -77,8 +77,13 @@ export function NotificationsPage() {
       <div className="surface notification-list">
         {items.length === 0 ? <p className="muted-copy">暂时没有通知。</p> : null}
         {items.map((item) => (
-          <article key={item.id} className={item.is_read ? "read" : ""}>
-            <button className="notification-link" type="button" onClick={() => openNotification(item)}>
+          <article key={item.id} data-testid={`notification-${item.id}`} className={item.is_read ? "read" : ""}>
+            <button
+              className="notification-link"
+              type="button"
+              aria-label={`打开通知：${notificationText(item)}`}
+              onClick={() => openNotification(item)}
+            >
               <Avatar user={item.actor} label={item.actor?.nickname || item.actor?.username || "D"} className="tiny-avatar" />
               <div>
                 <strong>{notificationText(item)}</strong>

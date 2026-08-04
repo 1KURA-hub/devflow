@@ -101,7 +101,7 @@ export function ComposerModal({ open, onClose }) {
             placeholder="Go, Redis, RabbitMQ"
           />
         </label>
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? <p className="form-error" role="alert">{error}</p> : null}
         <div className="modal-actions">
           <button className="ghost-button" type="button" onClick={onClose}>
             取消

@@ -54,6 +54,7 @@ export function PostDetailPage() {
           {user ? (
             <form className="comment-form" onSubmit={submit}>
               <textarea
+                aria-label="评论内容"
                 value={content}
                 onChange={(event) => setContent(event.target.value)}
                 placeholder="补充你的观点"

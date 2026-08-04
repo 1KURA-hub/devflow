@@ -126,7 +126,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      <section className="surface profile-header">
+      <section className="surface profile-header" aria-label="开发者资料">
         <Avatar user={profileUser} label={profileName} className="avatar" />
         <div>
           <p className="eyebrow">开发者主页</p>
@@ -145,7 +145,12 @@ export function ProfilePage() {
           </button>
         </div>
         {user && String(user.id) !== id ? (
-          <button className={followed ? "ghost-button" : "primary-button"} onClick={toggleFollow} disabled={followSubmitting}>
+          <button
+            className={followed ? "ghost-button" : "primary-button"}
+            aria-label={`${followed ? "取消关注" : "关注"} ${profileName}`}
+            onClick={toggleFollow}
+            disabled={followSubmitting}
+          >
             {followed ? "取消关注" : "关注"}
           </button>
         ) : null}
