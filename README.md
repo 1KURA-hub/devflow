@@ -40,6 +40,7 @@ devflow/
 │   └── worker/     # 消费逻辑
 ├── migrations/     # SQL 初始化脚本
 ├── tests/api/      # pytest 接口自动化
+├── tests/e2e/      # Playwright + TypeScript API/UI 自动化
 └── web/            # 前端
 ```
 
@@ -149,6 +150,7 @@ pytest -m cross
 
 - `.github/workflows/ci-cd.yml`：Go + Web 构建与部署流程
 - `.github/workflows/api-tests.yml`：接口自动化回归（启动依赖并跑 pytest）
+- `.github/workflows/e2e-tests.yml`：Playwright API/UI 主流程与网络异常回归
 
 ## 主要接口（摘要）
 
