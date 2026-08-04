@@ -11,6 +11,7 @@ internal/service/auth.go 的长度校验）：
 """
 
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -46,6 +47,25 @@ def test_register_duplicate_username_conflict(server_ready, unique_username):
     assert second.status_code == 409, f"期望 409，实际 {second.status_code} {second.message}"
 
 
+def test_concurrent_register_same_username_returns_one_success_one_conflict(
+    server_ready,
+    unique_username,
+):
+    """并发注册同一用户名时，唯一索引冲突也必须稳定映射为409。"""
+
+    def register_once():
+        return AuthClient(BaseClient()).register(
+            unique_username,
+            DEFAULT_PASSWORD,
+            "并发用户",
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(pool.map(lambda _: register_once(), range(2)))
+
+    assert sorted(response.status_code for response in responses) == [200, 409]
+
+
 @pytest.mark.smoke
 def test_login_success(registered_user):
     """已注册用户用正确密码登录应返回新 token。"""
@@ -71,6 +91,31 @@ def test_login_nonexistent_user_unauthorized(server_ready):
     resp = auth.login(_fresh_name(), DEFAULT_PASSWORD)
 
     assert resp.status_code == 401, f"期望 401，实际 {resp.status_code} {resp.message}"
+
+
+def test_public_profile_returns_real_user_and_aggregate_stats(registered_user, second_user):
+    """零动态用户也应返回真实资料，统计值来自聚合查询而不是首屏列表长度。"""
+    assert second_user.follow.follow(registered_user.user_id).ok
+    for index in range(2):
+        created = registered_user.post.create(
+            title=f"profile-stat-{index}",
+            content="profile aggregate test",
+        )
+        assert created.ok
+
+    profile = second_user.auth.user_profile(registered_user.user_id)
+    assert profile.ok, profile.message
+    assert profile.data["user"]["id"] == registered_user.user_id
+    assert profile.data["user"]["nickname"] == registered_user.nickname
+    assert profile.data["stats"] == {
+        "posts": 2,
+        "followers": 1,
+        "following": 0,
+    }
+
+    empty_profile = registered_user.auth.user_profile(second_user.user_id)
+    assert empty_profile.ok
+    assert empty_profile.data["user"]["nickname"] == second_user.nickname
 
 
 # --- 注册参数边界值（等价类 + 边界值，校验规则见 service/auth.go） ---
@@ -137,6 +182,28 @@ def test_register_nickname_length_boundary(server_ready, nickname_len, ok):
         assert resp.ok, f"昵称长度 {nickname_len} 应成功: {resp.status_code} {resp.message}"
     else:
         assert resp.status_code == 400, f"昵称长度 {nickname_len} 应被拒: {resp.status_code}"
+
+
+@pytest.mark.parametrize(
+    "nickname, ok",
+    [
+        ("测" * 3, True),
+        ("测" * 12, True),
+        ("测" * 13, False),
+    ],
+)
+def test_register_chinese_nickname_counts_unicode_characters(server_ready, nickname, ok):
+    """中文昵称按字符数校验，不应按UTF-8字节数误判。"""
+    resp = AuthClient(BaseClient()).register(
+        _fresh_name(),
+        DEFAULT_PASSWORD,
+        nickname,
+    )
+
+    if ok:
+        assert resp.ok, f"昵称 {nickname!r} 应注册成功: {resp.status_code} {resp.message}"
+    else:
+        assert resp.status_code == 400
 
 
 @pytest.mark.parametrize("missing", ["username", "password", "nickname"])

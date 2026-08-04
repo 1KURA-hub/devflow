@@ -32,6 +32,17 @@ type UserListResult struct {
 	Items []model.User `json:"items"`
 }
 
+type UserProfileStats struct {
+	Posts     int64 `json:"posts"`
+	Followers int64 `json:"followers"`
+	Following int64 `json:"following"`
+}
+
+type UserProfileResult struct {
+	User  *model.User      `json:"user"`
+	Stats UserProfileStats `json:"stats"`
+}
+
 func NewFollowService(follows *repository.FollowRepository, users *repository.UserRepository, posts *repository.PostRepository, notifications *NotificationService, relations *cache.FollowRelationStore, inboxes *cache.FeedInboxStore) *FollowService {
 	return &FollowService{
 		follows:       follows,
@@ -41,6 +52,36 @@ func NewFollowService(follows *repository.FollowRepository, users *repository.Us
 		relations:     relations,
 		inboxes:       inboxes,
 	}
+}
+
+func (s *FollowService) GetUserProfile(ctx context.Context, userID uint64) (*UserProfileResult, error) {
+	if userID == 0 {
+		return nil, ErrInvalidInput
+	}
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	postCount, err := s.posts.CountByAuthor(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	followerCount, err := s.follows.CountFollowers(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	followingCount, err := s.follows.CountFollowing(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return &UserProfileResult{
+		User: user,
+		Stats: UserProfileStats{
+			Posts:     postCount,
+			Followers: followerCount,
+			Following: followingCount,
+		},
+	}, nil
 }
 
 func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint64) error {
@@ -65,12 +106,12 @@ func (s *FollowService) Follow(ctx context.Context, followerID, followeeID uint6
 	logSideEffectErr("inbox_backfill", s.backfillInboxAfterFollow(ctx, followerID, followeeID),
 		"follower_id", followerID, "followee_id", followeeID)
 	if s.notifications != nil {
-		return s.notifications.Create(ctx, CreateNotificationInput{
+		logSideEffectErr("notification_follow", s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:  followeeID,
 			ActorID: followerID,
 			Type:    NotificationFollow,
 			Content: "有人关注了你",
-		})
+		}), "follower_id", followerID, "followee_id", followeeID)
 	}
 	return nil
 }
@@ -157,16 +198,27 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 	}
 
 	rebuildInbox := false
-	if postIDs, available, err := s.inboxes.PostIDs(ctx, userID, input.Cursor, int64(limit+1)); err == nil {
-		if available {
-			posts, err := s.posts.ListByIDs(ctx, postIDs)
-			if err != nil {
-				return nil, err
+	// Inbox 是用于首屏加速的有限快照，不是完整历史数据源。后续页面直接
+	// 使用同一个 time+id 游标查询 MySQL，避免超过快照上限的旧动态不可达。
+	if input.Cursor == nil {
+		if postIDs, available, err := s.inboxes.PostIDs(ctx, userID, nil, followingFeedInboxRebuildLimit+1); err == nil {
+			if available {
+				posts, err := s.posts.ListByIDs(ctx, postIDs)
+				if err != nil {
+					return nil, err
+				}
+				missing := missingPostIDs(postIDs, posts)
+				_ = s.inboxes.RemovePosts(ctx, userID, missing)
+				ordered := orderPostsByIDs(posts, postIDs)
+				// 缓存中即使有已删除的残留 ID，只要仍能组成完整首屏即可使用；
+				// 否则回源，避免错误地返回不足一页或 has_more=false。
+				if len(ordered) > limit || len(missing) == 0 {
+					return buildPostListResult(ordered, limit), nil
+				}
 			}
-			return buildPostListResult(orderPostsByIDs(posts, postIDs), limit), nil
-		}
-		if !available && input.Cursor == nil {
-			rebuildInbox = true
+			if !available {
+				rebuildInbox = true
+			}
 		}
 	}
 
@@ -182,6 +234,20 @@ func (s *FollowService) ListFollowingFeed(ctx context.Context, userID uint64, in
 		_ = s.inboxes.Rebuild(ctx, userID, feedInboxItems(posts))
 	}
 	return buildPostListResult(posts, limit), nil
+}
+
+func missingPostIDs(requested []uint64, posts []model.Post) []uint64 {
+	existing := make(map[uint64]struct{}, len(posts))
+	for _, post := range posts {
+		existing[post.ID] = struct{}{}
+	}
+	missing := make([]uint64, 0)
+	for _, postID := range requested {
+		if _, ok := existing[postID]; !ok {
+			missing = append(missing, postID)
+		}
+	}
+	return missing
 }
 
 func (s *FollowService) backfillInboxAfterFollow(ctx context.Context, followerID, followeeID uint64) error {

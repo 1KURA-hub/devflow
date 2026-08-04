@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"devflow/internal/cache"
 	"devflow/internal/model"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 )
 
@@ -71,16 +71,14 @@ func (s *CommentService) Create(ctx context.Context, input CreateCommentInput) (
 	logSideEffectErr("hot_score_comment", s.hotPosts.SetScore(ctx, input.PostID, hotScore(post.LikeCount, post.FavoriteCount, post.CommentCount+1)),
 		"post_id", input.PostID, "user_id", input.UserID)
 	if s.notifications != nil {
-		if err := s.notifications.Create(ctx, CreateNotificationInput{
+		logSideEffectErr("notification_comment", s.notifications.Create(ctx, CreateNotificationInput{
 			UserID:    post.AuthorID,
 			ActorID:   input.UserID,
 			Type:      NotificationComment,
 			PostID:    &input.PostID,
 			CommentID: &comment.ID,
 			Content:   "有人评论了你的动态",
-		}); err != nil {
-			return nil, err
-		}
+		}), "post_id", input.PostID, "comment_id", comment.ID, "user_id", input.UserID)
 	}
 	return comment, nil
 }
@@ -112,7 +110,10 @@ func buildCommentListResult(comments []model.Comment, limit int) *CommentListRes
 		HasMore: hasMore,
 	}
 	if hasMore && len(comments) > 0 {
-		result.NextCursor = comments[len(comments)-1].CreatedAt.Format(time.RFC3339Nano)
+		result.NextCursor, _ = pagination.Encode(pagination.Chronological(
+			comments[len(comments)-1].CreatedAt,
+			comments[len(comments)-1].ID,
+		))
 	}
 	return result
 }

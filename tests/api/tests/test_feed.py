@@ -78,31 +78,57 @@ def test_following_feed_cold_start_falls_back_to_latest(published_post, second_u
 
 
 def test_latest_feed_pagination_by_cursor(registered_user):
-    """limit=1 取第一页拿到 next_cursor，再用 cursor 取下一页，两页 id 不重复。
-
-    覆盖游标分页契约：has_more=true 时返回 next_cursor，按其翻页应拿到更旧的帖。
-    """
-    # 至少造 3 篇帖，保证有多页
+    """快速创建的数据必须能跨页完整遍历，且不重不漏。"""
     created_ids = []
     for i in range(3):
         r = registered_user.post.create(title=f"page-{i}", content="pagination test")
         assert r.ok
         created_ids.append(r.data["id"])
 
-    first = registered_user.feed.latest(limit=1)
-    assert first.ok
-    assert first.data["has_more"] is True, "limit=1 且帖子充足时应 has_more=true"
-    assert first.data.get("next_cursor"), "has_more=true 时应返回 next_cursor"
-    assert len(first.data["items"]) == 1
-    first_id = first.data["items"][0]["id"]
+    seen = []
+    cursor = None
+    for _ in range(100):
+        page = registered_user.feed.latest(limit=1, cursor=cursor)
+        assert page.ok
+        page_ids = [item["id"] for item in page.data["items"]]
+        assert not set(page_ids).intersection(seen), "游标翻页不应返回重复帖子"
+        seen.extend(page_ids)
+        if set(created_ids).issubset(seen):
+            break
+        assert page.data["has_more"] is True, "目标帖子尚未遍历完却提前结束分页"
+        cursor = page.data.get("next_cursor")
+        assert cursor, "has_more=true 时必须返回 next_cursor"
 
-    cursor = first.data["next_cursor"]
-    second = registered_user.feed.latest(limit=1, cursor=cursor)
-    assert second.ok
-    assert len(second.data["items"]) == 1
-    second_id = second.data["items"][0]["id"]
+    assert set(created_ids).issubset(seen), "同一时间附近创建的帖子在分页中被遗漏"
 
-    assert first_id != second_id, "翻页后不应再次返回上一页的同一条帖子"
+
+def test_hot_feed_pagination_uses_score_and_id_cursor(registered_user, second_user):
+    """相同热度分的帖子必须能按稳定游标完整翻页。"""
+    created_ids = []
+    for i in range(3):
+        created = registered_user.post.create(
+            title=f"hot-page-{i}",
+            content="hot pagination test",
+        )
+        assert created.ok
+        created_ids.append(created.data["id"])
+        assert second_user.interaction.like(created.data["id"]).ok
+
+    seen = []
+    cursor = None
+    for _ in range(100):
+        page = registered_user.feed.hot(limit=1, cursor=cursor)
+        assert page.ok
+        page_ids = [item["id"] for item in page.data["items"]]
+        assert not set(page_ids).intersection(seen), "热门流翻页不应重复"
+        seen.extend(page_ids)
+        if set(created_ids).issubset(seen):
+            break
+        assert page.data["has_more"] is True, "热门帖子尚未遍历完却提前结束分页"
+        cursor = page.data.get("next_cursor")
+        assert cursor, "热门流 has_more=true 时必须返回 next_cursor"
+
+    assert set(created_ids).issubset(seen), "相同热度分的帖子在热门流分页中被遗漏"
 
 
 def test_following_feed_only_contains_followees_posts(registered_user, second_user):

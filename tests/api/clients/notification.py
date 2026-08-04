@@ -7,8 +7,13 @@ class NotificationClient:
     def __init__(self, http: BaseClient):
         self.http = http
 
-    def list(self) -> ApiResponse:
-        return self.http.get("/api/notifications")
+    def list(self, limit=None, cursor=None) -> ApiResponse:
+        params = {}
+        if limit:
+            params["limit"] = limit
+        if cursor:
+            params["cursor"] = cursor
+        return self.http.get("/api/notifications", params=params or None)
 
     def unread_count(self) -> ApiResponse:
         return self.http.get("/api/notifications/unread-count")

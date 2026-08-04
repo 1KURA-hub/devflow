@@ -61,6 +61,15 @@ func (r *FollowRepository) CountFollowing(ctx context.Context, userID uint64) (i
 	return count, err
 }
 
+func (r *FollowRepository) CountFollowers(ctx context.Context, userID uint64) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&model.Follow{}).
+		Where("followee_id = ?", userID).
+		Count(&count).Error
+	return count, err
+}
+
 func (r *FollowRepository) ListFollowingIDs(ctx context.Context, userID uint64) ([]uint64, error) {
 	var ids []uint64
 	err := r.db.WithContext(ctx).

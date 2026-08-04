@@ -3,9 +3,9 @@ package repository
 import (
 	"context"
 	"errors"
-	"time"
 
 	"devflow/internal/model"
+	"devflow/internal/pagination"
 
 	mysqldriver "github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
@@ -44,7 +44,7 @@ func (r *NotificationRepository) CreateOnce(ctx context.Context, eventID string,
 	return created, err
 }
 
-func (r *NotificationRepository) ListByUser(ctx context.Context, userID uint64, cursor *time.Time, limit int) ([]model.Notification, error) {
+func (r *NotificationRepository) ListByUser(ctx context.Context, userID uint64, cursor *pagination.Cursor, limit int) ([]model.Notification, error) {
 	query := r.db.WithContext(ctx).
 		Preload("Actor").
 		Preload("Post").
@@ -53,7 +53,17 @@ func (r *NotificationRepository) ListByUser(ctx context.Context, userID uint64, 
 		Order("id DESC").
 		Limit(limit)
 	if cursor != nil {
-		query = query.Where("created_at < ?", *cursor)
+		createdAt := cursor.CreatedAt()
+		if cursor.ID == 0 {
+			query = query.Where("created_at < ?", createdAt)
+		} else {
+			query = query.Where(
+				"(created_at < ?) OR (created_at = ? AND id < ?)",
+				createdAt,
+				createdAt,
+				cursor.ID,
+			)
+		}
 	}
 
 	var notifications []model.Notification

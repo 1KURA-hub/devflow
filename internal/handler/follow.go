@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"devflow/internal/middleware"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 	"devflow/internal/response"
 	"devflow/internal/service"
@@ -71,6 +72,20 @@ func (a *App) getFollowState(c *gin.Context) {
 	response.OK(c, gin.H{"followed": followed})
 }
 
+func (a *App) getUserProfile(c *gin.Context) {
+	userID, err := parseUint64Param(c, "id")
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+	profile, err := a.followService.GetUserProfile(c.Request.Context(), userID)
+	if err != nil {
+		writeFollowError(c, err)
+		return
+	}
+	response.OK(c, profile)
+}
+
 func (a *App) listFollowingUsers(c *gin.Context) {
 	userID, err := parseUint64Param(c, "id")
 	if err != nil {
@@ -117,7 +132,7 @@ func (a *App) listFollowingFeed(c *gin.Context) {
 		response.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	input, err := parseListQuery(c)
+	input, err := parseListQuery(c, pagination.KindChronological)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return

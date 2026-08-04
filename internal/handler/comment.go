@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"devflow/internal/middleware"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 	"devflow/internal/response"
 	"devflow/internal/service"
@@ -52,7 +53,7 @@ func (a *App) listComments(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "invalid post id")
 		return
 	}
-	input, err := parseListQuery(c)
+	input, err := parseListQuery(c, pagination.KindChronological)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return

@@ -15,6 +15,15 @@ class CommentClient:
             json={"content": content},
         )
 
-    def list(self, post_id: int, limit: Optional[int] = None) -> ApiResponse:
-        params = {"limit": limit} if limit else None
-        return self.http.get(f"/api/posts/{post_id}/comments", params=params)
+    def list(
+        self,
+        post_id: int,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> ApiResponse:
+        params = {}
+        if limit:
+            params["limit"] = limit
+        if cursor:
+            params["cursor"] = cursor
+        return self.http.get(f"/api/posts/{post_id}/comments", params=params or None)

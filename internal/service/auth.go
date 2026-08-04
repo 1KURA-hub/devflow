@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"devflow/internal/auth"
 	"devflow/internal/model"
@@ -62,7 +63,7 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 	}
 	if len(username) < 3 || len(username) > 12 ||
 		len(password) < 6 || len(password) > 16 ||
-		len(nickname) < 3 || len(nickname) > 12 {
+		utf8.RuneCountInString(nickname) < 3 || utf8.RuneCountInString(nickname) > 12 {
 		return nil, ErrInvalidInput
 	}
 
@@ -84,6 +85,9 @@ func (s *AuthService) Register(ctx context.Context, input RegisterInput) (*AuthR
 		Status:       1,
 	}
 	if err := s.users.Create(ctx, user); err != nil {
+		if errors.Is(err, repository.ErrDuplicate) {
+			return nil, ErrUsernameTaken
+		}
 		return nil, err
 	}
 
@@ -136,7 +140,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, input UpdateProfileInpu
 
 	if input.Nickname != nil {
 		nickname := strings.TrimSpace(*input.Nickname)
-		if len(nickname) < 3 || len(nickname) > 12 {
+		if utf8.RuneCountInString(nickname) < 3 || utf8.RuneCountInString(nickname) > 12 {
 			return nil, ErrInvalidInput
 		}
 		updates["nickname"] = nickname
