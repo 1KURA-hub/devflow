@@ -7,6 +7,7 @@ import { FeedList } from "../components/FeedList";
 import { useAuth } from "../state/auth";
 import devflowIcon from "../assets/devflow-icon.png";
 
+const demoMode = import.meta.env.VITE_DEMO_MODE === "true";
 const topics = ["Go", "Redis", "微服务", "Docker", "K8s", "并发编程", "AI", "RAG", "设计模式", "Linux", "数据库", "DevOps"];
 const feedTabs = [
   { to: "/", label: "最新", end: true },
@@ -119,7 +120,7 @@ export function FeedPage({ mode }) {
       })
       .catch(() => {
         if (active) {
-          setRecommendedUsers(demoAuthors);
+          setRecommendedUsers([]);
         }
       });
     return () => {
@@ -130,7 +131,7 @@ export function FeedPage({ mode }) {
   const visibleTopics = showAllTopics ? topics : topics.slice(0, 8);
   const suggestedFollows = useMemo(
     () => {
-      const users = recommendedUsers.length ? recommendedUsers : demoAuthors;
+      const users = recommendedUsers.length ? recommendedUsers : demoMode ? demoAuthors : [];
       return Array.from({ length: Math.min(3, users.length) }, (_, index) => users[(followPage * 3 + index) % users.length]);
     },
     [followPage, recommendedUsers]
@@ -243,6 +244,7 @@ export function FeedPage({ mode }) {
             query={searchQuery}
             activeTag={activeTag}
             fallbackItems={demoFeedPosts}
+            demoFallbackEnabled={demoMode}
           />
         </div>
       </section>

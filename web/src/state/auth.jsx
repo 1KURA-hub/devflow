@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { api, getStoredToken, setStoredToken } from "../api/client";
+import { api, getStoredToken, isUnauthorizedError, setStoredToken } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -20,9 +20,11 @@ export function AuthProvider({ children }) {
           setUser(nextUser);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (active) {
-          setStoredToken(null);
+          if (isUnauthorizedError(error)) {
+            setStoredToken(null);
+          }
           setUser(null);
         }
       })

@@ -6,7 +6,14 @@ import { useAuth } from "../state/auth";
 import { Avatar } from "./Avatar";
 import { formatDate, splitTags } from "../utils/format";
 
-export function PostCard({ post, compact = false, rich = false, detail = false, onDeleted }) {
+export function PostCard({
+  post,
+  compact = false,
+  rich = false,
+  detail = false,
+  onDeleted,
+  onUnfavorited
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [liked, setLiked] = useState(Boolean(post.liked));
@@ -72,6 +79,9 @@ export function PostCard({ post, compact = false, rich = false, detail = false, 
     }));
     try {
       await (nextFavorited ? api.favorite(post.id) : api.unfavorite(post.id));
+      if (!nextFavorited) {
+        onUnfavorited?.(post.id);
+      }
     } catch (error) {
       setFavorited(!nextFavorited);
       setCounts((current) => ({

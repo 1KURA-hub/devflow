@@ -47,6 +47,7 @@ test.describe("UI｜动态主流程", () => {
 
     await detail.expectComment(actor.nickname, comment);
     await expect(page.getByRole("heading", { name: "1 条回应" })).toBeVisible();
+    await new FeedPage(page).post(ownedPost.post.id).expectCommentCount(1);
     await expect(page.getByLabel("评论内容")).toHaveValue("");
   });
 
@@ -71,5 +72,23 @@ test.describe("UI｜动态主流程", () => {
     expect(post.like_count).toBe(1);
     expect(post.favorite_count).toBe(1);
     await card.expectInteractionCounts(post.like_count, post.favorite_count);
+  });
+
+  test("在收藏页取消收藏后，动态会从列表移除", async ({ page, actor, data }) => {
+    const author = await data.createActor();
+    const ownedPost = await data.createPost(author, {
+      title: uniquePostTitle("unfavorite")
+    });
+    await data.favorite(actor, ownedPost);
+    const feed = new FeedPage(page);
+    await page.goto("/favorites");
+    await feed.expectPost(ownedPost.post.id, ownedPost.post);
+    const card = feed.post(ownedPost.post.id);
+
+    await card.root.getByRole("button", { name: "取消收藏" }).click();
+
+    await expect(card.root).toBeHidden();
+    const favorites = requireData(await actor.api.favorites({ limit: 50 }), "查询取消后的收藏列表");
+    expect(favorites.items.some((post) => post.id === ownedPost.post.id)).toBe(false);
   });
 });

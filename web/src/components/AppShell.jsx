@@ -115,20 +115,25 @@ export function AppShell() {
       setUnreadCount(0);
       return undefined;
     }
-    api
-      .unreadCount()
-      .then((result) => {
-        if (active) {
-          setUnreadCount(result.unread_count);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setUnreadCount(0);
-        }
-      });
+    const refreshUnreadCount = () => {
+      api
+        .unreadCount()
+        .then((result) => {
+          if (active) {
+            setUnreadCount(result.unread_count);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setUnreadCount(0);
+          }
+        });
+    };
+    refreshUnreadCount();
+    window.addEventListener("devflow:notifications-changed", refreshUnreadCount);
     return () => {
       active = false;
+      window.removeEventListener("devflow:notifications-changed", refreshUnreadCount);
     };
   }, [location.pathname, user]);
 

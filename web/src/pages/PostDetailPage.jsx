@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
@@ -14,27 +14,81 @@ export function PostDetailPage() {
   const [comments, setComments] = useState([]);
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
+  const [loadedPostID, setLoadedPostID] = useState("");
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState("");
+  const viewVersionRef = useRef(0);
 
   useEffect(() => {
+    let active = true;
+    viewVersionRef.current += 1;
+    const viewVersion = viewVersionRef.current;
+    setPost(null);
+    setComments([]);
+    setContent("");
+    setError("");
+    setLoadedPostID("");
+    setCommentSubmitting(false);
+    setCommentError("");
     Promise.all([api.getPost(id), api.comments(id, {})])
       .then(([nextPost, nextComments]) => {
+        if (!active) {
+          return;
+        }
         setPost(nextPost);
         setComments(nextComments.items);
+        setLoadedPostID(id);
       })
-      .catch((nextError) => setError(nextError.message));
+      .catch((nextError) => {
+        if (active) {
+          setError(nextError.message);
+          setLoadedPostID(id);
+        }
+      });
+    return () => {
+      active = false;
+      if (viewVersionRef.current === viewVersion) {
+        viewVersionRef.current += 1;
+      }
+    };
   }, [id]);
 
   async function submit(event) {
     event.preventDefault();
-    const comment = await api.createComment(id, { content });
-    setComments((current) => [comment, ...current]);
-    setContent("");
+    if (commentSubmitting) {
+      return;
+    }
+    const submittedPostID = id;
+    const submittedViewVersion = viewVersionRef.current;
+    const submittedContent = content;
+    const isCurrentView = () => viewVersionRef.current === submittedViewVersion;
+    setCommentSubmitting(true);
+    setCommentError("");
+    try {
+      const comment = await api.createComment(submittedPostID, { content: submittedContent });
+      if (!isCurrentView()) {
+        return;
+      }
+      setComments((current) => [comment, ...current]);
+      setPost((current) =>
+        current ? { ...current, comment_count: current.comment_count + 1 } : current
+      );
+      setContent("");
+    } catch (nextError) {
+      if (isCurrentView()) {
+        setCommentError(nextError.message);
+      }
+    } finally {
+      if (isCurrentView()) {
+        setCommentSubmitting(false);
+      }
+    }
   }
 
-  if (error) {
+  if (loadedPostID === id && error) {
     return <div className="surface state-box">{error}</div>;
   }
-  if (!post) {
+  if (loadedPostID !== id || !post) {
     return <div className="surface state-box">正在载入动态...</div>;
   }
 
@@ -61,7 +115,10 @@ export function PostDetailPage() {
                 rows="4"
                 required
               />
-              <button className="primary-button">发表评论</button>
+              {commentError ? <p className="form-error" role="alert">{commentError}</p> : null}
+              <button className="primary-button" disabled={commentSubmitting}>
+                {commentSubmitting ? "发表中..." : "发表评论"}
+              </button>
             </form>
           ) : (
             <p className="muted-copy">登录后可以参与讨论。</p>

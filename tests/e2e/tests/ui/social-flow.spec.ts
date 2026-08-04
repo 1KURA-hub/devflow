@@ -43,13 +43,16 @@ test.describe("UI｜跨用户链路", () => {
         item.post_id === ownedPost.post.id
     );
     const notifications = new NotificationsPage(page);
+    const appShell = new AppShell(page);
 
     await notifications.goto();
+    await appShell.expectUnreadCount(1);
     await notifications.expectText(
       notification.id,
       `${visitor.nickname} 点赞了 《${ownedPost.post.title}》`
     );
     await notifications.markRead(notification.id);
+    await appShell.expectUnreadCount(0);
     await notifications.open(notification.id, ownedPost.post.id);
     await new PostDetailPage(page).expectPost(ownedPost.post.title);
   });

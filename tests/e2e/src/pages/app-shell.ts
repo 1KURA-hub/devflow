@@ -26,4 +26,15 @@ export class AppShell {
     await expect(this.page.locator(".sidebar-profile").getByText(nickname, { exact: true })).toBeVisible();
     await expect(this.mainNavigation.getByRole("link", { name: "我的" })).toBeVisible();
   }
+
+  async expectUnreadCount(count: number): Promise<void> {
+    const badge = this.mainNavigation
+      .getByRole("link", { name: /通知/ })
+      .locator("span");
+    if (count === 0) {
+      await expect(badge).toHaveCount(0);
+      return;
+    }
+    await expect(badge).toHaveText(String(count));
+  }
 }

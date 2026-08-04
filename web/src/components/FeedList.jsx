@@ -9,7 +9,9 @@ export function FeedList({
   rich = false,
   query = "",
   activeTag = "",
-  fallbackItems = []
+  fallbackItems = [],
+  demoFallbackEnabled = false,
+  removeOnUnfavorite = false
 }) {
   const [state, setState] = useState({
     items: [],
@@ -44,7 +46,8 @@ export function FeedList({
     };
   }, [loader, refreshKey]);
 
-  const visibleItems = state.error || state.items.length === 0 ? fallbackItems : state.items;
+  const visibleItems =
+    demoFallbackEnabled && state.items.length === 0 ? fallbackItems : state.items;
   const filteredItems = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const normalizedTag = activeTag.trim().toLowerCase();
@@ -76,7 +79,7 @@ export function FeedList({
   if (state.loading) {
     return <div className="surface state-box">正在载入动态...</div>;
   }
-  if (state.error && fallbackItems.length === 0) {
+  if (state.error) {
     return <div className="surface state-box">{state.error}</div>;
   }
   if (visibleItems.length === 0 || filteredItems.length === 0) {
@@ -90,7 +93,13 @@ export function FeedList({
   return (
     <div className="feed-stack">
       {filteredItems.map((post) => (
-        <PostCard key={post.id} post={post} rich={rich} onDeleted={removePost} />
+        <PostCard
+          key={post.id}
+          post={post}
+          rich={rich}
+          onDeleted={removePost}
+          onUnfavorited={removeOnUnfavorite ? removePost : undefined}
+        />
       ))}
       {state.hasMore ? (
         <button className="ghost-button load-more" onClick={loadMore}>

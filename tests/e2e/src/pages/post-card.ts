@@ -50,4 +50,10 @@ export class PostCard {
       String(favoriteCount)
     );
   }
+
+  async expectCommentCount(commentCount: number): Promise<void> {
+    await expect(this.root.getByRole("link", { name: "查看评论" })).toContainText(
+      String(commentCount)
+    );
+  }
 }
