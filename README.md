@@ -58,7 +58,7 @@ cp .env.example .env
 - `MYSQL_DSN`：MySQL 连接串（默认连本机 `3307`）
 - `REDIS_ADDR`：Redis 地址
 - `RABBITMQ_URL`：RabbitMQ 连接串
-- `JWT_SECRET`：JWT 密钥
+- `JWT_SECRET`：JWT 密钥；生产环境必须显式设置至少 32 字节的随机值
 - `DISABLE_WORKERS`：是否禁用 server 进程内 worker（默认 `false`）
 
 ### 2) 启动依赖
@@ -115,11 +115,14 @@ cp .env.prod.example .env.prod
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build mysql redis rabbitmq app web
 ```
 
-初始化演示数据：
+演示数据只允许在开发或测试环境初始化：
 
 ```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml run --rm seed
+APP_ENV=dev go run ./cmd/seed
 ```
+
+`cmd/seed` 会拒绝在 `APP_ENV=prod` 时运行。生产部署不会执行 seed 或
+`AUTO_MIGRATE`；生产表结构变更应通过审核后的版本化 SQL migration 完成。
 
 若启用拆分 worker（`DISABLE_WORKERS=true`），可加 profile 启动 worker 服务：
 
