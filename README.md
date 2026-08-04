@@ -130,6 +130,25 @@ APP_ENV=dev go run ./cmd/seed
 docker compose --env-file .env.prod -f docker-compose.prod.yml --profile split up -d worker
 ```
 
+### 远端隔离验证
+
+在共享测试主机上使用 `docker-compose.remote.yml`。该配置使用独立的 Compose
+项目、网络和数据卷，只对宿主机暴露 Web 端口 `28081`，MySQL、Redis 和
+RabbitMQ 均不映射宿主机端口：
+
+```bash
+docker compose -f docker-compose.remote.yml up -d --build mysql redis rabbitmq app web
+curl -fsS http://127.0.0.1:28081/healthz
+```
+
+测试也在远端容器内运行，避免占用本机 Docker 资源：
+
+```bash
+docker compose -f docker-compose.remote.yml --profile test run --rm go-tests
+docker compose -f docker-compose.remote.yml --profile test run --rm api-tests
+docker compose -f docker-compose.remote.yml --profile test run --rm e2e-tests
+```
+
 ## API 自动化测试（pytest）
 
 测试目录：`tests/api/`
