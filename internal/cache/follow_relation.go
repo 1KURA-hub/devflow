@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -12,14 +13,8 @@ const (
 	followingSetPrefix = "devflow:user:following:"
 	followerSetPrefix  = "devflow:user:followers:"
 	followSetSentinel  = "0"
+	followRelationTTL  = 5 * time.Minute
 )
-
-const mutateExistingSetScript = `
-if redis.call("EXISTS", KEYS[1]) == 1 then
-	return redis.call(ARGV[1], KEYS[1], ARGV[2])
-end
-return 0
-`
 
 type FollowRelationStore struct {
 	client *redis.Client
@@ -49,22 +44,14 @@ func (s *FollowRelationStore) AddFollow(ctx context.Context, followerID, followe
 	if s == nil || s.client == nil {
 		return nil
 	}
-	member := strconv.FormatUint(followeeID, 10)
-	if err := s.mutateExistingSet(ctx, followingSetKey(followerID), "SADD", member); err != nil {
-		return err
-	}
-	return s.mutateExistingSet(ctx, followerSetKey(followeeID), "SADD", strconv.FormatUint(followerID, 10))
+	return s.invalidatePair(ctx, followerID, followeeID)
 }
 
 func (s *FollowRelationStore) RemoveFollow(ctx context.Context, followerID, followeeID uint64) error {
 	if s == nil || s.client == nil {
 		return nil
 	}
-	member := strconv.FormatUint(followeeID, 10)
-	if err := s.mutateExistingSet(ctx, followingSetKey(followerID), "SREM", member); err != nil {
-		return err
-	}
-	return s.mutateExistingSet(ctx, followerSetKey(followeeID), "SREM", strconv.FormatUint(followerID, 10))
+	return s.invalidatePair(ctx, followerID, followeeID)
 }
 
 func (s *FollowRelationStore) ids(ctx context.Context, key string) ([]uint64, bool, error) {
@@ -110,12 +97,17 @@ func (s *FollowRelationStore) replaceIDs(ctx context.Context, key string, ids []
 	pipe := s.client.TxPipeline()
 	pipe.Del(ctx, key)
 	pipe.SAdd(ctx, key, members...)
+	pipe.Expire(ctx, key, followRelationTTL)
 	_, err := pipe.Exec(ctx)
 	return err
 }
 
-func (s *FollowRelationStore) mutateExistingSet(ctx context.Context, key, command, member string) error {
-	return s.client.Eval(ctx, mutateExistingSetScript, []string{key}, command, member).Err()
+func (s *FollowRelationStore) invalidatePair(ctx context.Context, followerID, followeeID uint64) error {
+	return s.client.Del(
+		ctx,
+		followingSetKey(followerID),
+		followerSetKey(followeeID),
+	).Err()
 }
 
 func followingSetKey(userID uint64) string {

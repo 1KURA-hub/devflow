@@ -1,105 +1,118 @@
-# DevFlow 接口自动化测试
+# DevFlow API 自动化测试
 
-基于 `pytest + requests` 的 HTTP 接口自动化，覆盖 devflow 后端核心链路。
+这是一个面向测试开发实习作品集的 `pytest + requests` 接口自动化子项目。它重点展示测试分层、fixture、数据隔离、核心异常、幂等性和异步结果轮询，不追求穷举所有接口。
 
-## 一、本地怎么跑
+## 分层结构
 
-```bash
-# 1) 启动后端依赖 + server（项目根目录）
-docker compose up -d mysql redis
-go run ./cmd/server          # 监听 :8080
-
-# 2) 装测试依赖
-cd tests/api
-pip install -r requirements.txt
-
-# 3) 跑全部用例
-pytest
-
-# 跑某一类
-pytest tests/test_like.py
-pytest -m smoke              # 只跑冒烟
-pytest -m idempotent         # 只跑幂等场景
-pytest -m cross              # 只跑跨链路
+```text
+tests/                         # 用例与业务断言
+  ↓
+conftest.py                    # 用户、认证客户端、帖子等fixture
+  ↓
+clients/                       # 薄client，只封装路径和参数
+  ↓
+BaseClient                     # Session、Bearer Token、统一响应解析
+  ↓
+DevFlow HTTP API
 ```
 
-配置项（环境变量）：
+目录：
 
-| 变量 | 默认 | 说明 |
-| --- | --- | --- |
-| `DEVFLOW_BASE_URL` | `http://localhost:8080` | 被测 server 地址 |
-| `DEVFLOW_TIMEOUT` | `10` | 单个请求超时（秒） |
-| `DEVFLOW_NOTIFY_TIMEOUT` | `5` | 异步通知轮询超时 |
-
-## 二、目录与职责
-
-```
+```text
 tests/api/
-├── config.py            # 集中读环境变量
-├── conftest.py          # 全局 fixtures（用户、token、帖子）
-├── clients/             # 接口封装层：每个领域一个文件，只发请求不做断言
-│   ├── base.py          # 统一 HTTP 调用 + 响应解析（ApiResponse）
+├── config.py
+├── conftest.py
+├── pytest.ini
+├── requirements.txt
+├── clients/
+│   ├── base.py
 │   ├── auth.py
 │   ├── post.py
 │   ├── interaction.py
+│   ├── comment.py
 │   ├── follow.py
 │   ├── feed.py
 │   └── notification.py
-└── tests/               # 用例层：组合 fixture + client，写断言
-    ├── test_auth.py     # 4 条：注册/登录/重复用户名/错密码
-    ├── test_post.py     # 4 条：发帖/未授权/详情字段/非作者删帖
-    ├── test_like.py     # 4 条：点赞/幂等/取消/取消未点赞
-    ├── test_follow.py   # 3 条：关注/关注自己/重复关注
-    ├── test_feed.py     # 3 条：latest/hot/following 冷启动降级
-    └── test_cross.py    # 2 条：fan-out / 点赞触发通知
+└── tests/
+    ├── test_auth.py
+    ├── test_post.py
+    ├── test_interactions.py
+    └── test_social.py
 ```
 
-## 三、设计要点（面试可讲）
+## 覆盖范围
 
-### 三层分离
-- **用例层**只表达业务意图与断言：「点赞两次仍然 like_count=1」。
-- **client 层**只封装 URL/header：换接口路径只动一个文件。
-- **base 层**统一响应解析：devflow 返回结构 `{code, message, data}`，封装成 `ApiResponse`，用例同时能断言 HTTP 状态码 + 业务码 + data 字段。
+- 注册、登录、重复用户名、无效Token和参数化异常数据；
+- 发帖、详情、未认证、作者/非作者删除权限；
+- 点赞、收藏、评论及计数一致性；
+- 一个重复点赞幂等用例；
+- 一个并发注册代表用例；
+- 关注关系、关注流和点赞通知；
+- smoke、idempotent、cross 三类标记。
 
-### fixture 设计
-- `unique_username` 每条用例独立用户名，避免互相冲突。
-- `registered_user` / `second_user` 不止给 token，还预装好所有 domain client，用例直接 `user.interaction.like(...)`，可读性最高。
-- `published_post` 在 `registered_user` 之上，叠出一篇可被点赞/评论的帖。
+## 数据与环境安全
 
-### 异步等待
-- 通知链路走 MQ，本地若不开 RabbitMQ 走同步降级，CI 若开 MQ 需要轮询。
-- `test_cross.py` 的 `poll_until` 兼容两种部署，避免 sleep 写死。
+- 用户名和帖子标题使用随机后缀，测试之间不依赖执行顺序；
+- 每个用户拥有独立的 `requests.Session`，fixture结束时关闭；
+- `published_post` fixture会尽量删除帖子；
+- 测试用户目前没有删除接口，因此CI使用临时数据库；
+- 启动测试前校验 `/healthz` 的 `app=devflow`、`env=test`；
+- 远程测试环境必须显式设置 `DEVFLOW_ALLOW_REMOTE_TESTS=true`，严禁指向生产环境。
 
-### 重点覆盖的"系统性契约"
-| 测试 | 覆盖的设计 |
-| --- | --- |
-| `test_like_is_idempotent` | `INSERT ... ON CONFLICT DO NOTHING` + 唯一索引 + 事务计数 |
-| `test_following_feed_cold_start_falls_back_to_latest` | 关注 feed 的冷启动降级 |
-| `test_follower_can_see_followed_user_post` | 发帖 fan-out 到 inbox |
-| `test_like_triggers_like_notification` | MQ + 通知幂等写入 |
-| `test_duplicate_follow_known_issue` | 主动记录"重复关注返回 500"的不一致 |
+## 本地运行
 
-## 四、面试常见问答
+先启动测试环境中的DevFlow服务，然后执行：
 
-**Q：为什么用接口测试而不是单元测试？**  
-A：devflow 的价值大部分在 service + cache + MQ 协作，纯单测难以覆盖跨层逻辑。接口测试用真实 HTTP + 真实 DB/Redis，更接近用户视角，能验证"系统作为一个整体的契约"。Go 单测我在另外补关键纯函数（hotScore、参数归一化）。
+```bash
+cd tests/api
+python -m pip install -r requirements.txt
 
-**Q：为什么分 client 层？**  
-A：接口路径或 header 调整时，所有用例不用动；同一个 client 也方便在脚本里复用做数据准备。
+# 收集用例，不发送业务请求
+pytest --collect-only -q
 
-**Q：怎么保证用例可重复执行？**  
-A：用例级 fixture + 随机 username/title，每次新用户、新帖子，不依赖共享数据；本地反复跑也不会脏。
+# 最小冒烟集合
+pytest -m smoke
 
-**Q：跨链路（通知、fan-out）异步怎么测？**  
-A：用 `poll_until` 在限定窗口内重试断言，超时算失败。这比 sleep 更稳，也能反映"应该多久内可见"的业务期望。
+# 幂等代表用例
+pytest -m idempotent
 
-**Q：测出过 bug 吗？**  
-A：是的，重复关注会落到 500（写错误映射）；用例 `test_duplicate_follow_known_issue` 把现状固化下来，修复后该用例会触发回归提醒，避免悄悄变更行为。
+# 跨模块场景
+pytest -m cross
 
-## 五、CI
+# 完整回归
+pytest
+```
 
-`.github/workflows/api-tests.yml` 会：
-1. 起 MySQL + Redis service container
-2. 编译并启动 devflow server（无 RabbitMQ，走同步降级）
-3. 等 `/healthz` 就绪
-4. 跑 `pytest`，产物 `report.xml` 作为 artifact
+环境变量：
+
+| 变量 | 默认值 | 作用 |
+| --- | --- | --- |
+| `DEVFLOW_BASE_URL` | `http://localhost:8080` | 被测服务地址 |
+| `DEVFLOW_TIMEOUT` | `10` | 单次请求超时秒数 |
+| `DEVFLOW_NOTIFY_TIMEOUT` | `5` | 异步结果最长轮询时间 |
+| `DEVFLOW_ALLOW_REMOTE_TESTS` | 未启用 | 显式允许隔离远程环境写入 |
+
+## Allure 测试报告
+
+`pytest.ini` 已把 `--alluredir=allure-results` 写入 addopts，因此每次运行都会在
+`tests/api/allure-results/` 生成 Allure 原始数据。查看报告：
+
+```bash
+# 方式一：本地起服务并自动打开浏览器（适合演示）
+allure serve allure-results
+
+# 方式二：生成静态 HTML 后打开
+allure generate allure-results --clean -o allure-report
+allure open allure-report
+```
+
+Allure CLI 需要 Java 17+（macOS：`brew install allure`，或 `npm i -g allure-commandline`）。
+CI 中由 workflow 下载 CLI、生成报告并作为 artifact 上传，无需手动执行。
+
+## 关键设计说明
+
+1. Client层不写断言，测试层保留业务期望。
+2. 每次读取响应数据前先确认请求成功，使失败信息更清楚。
+3. 异步通知和关注流使用限时轮询，不用固定长时间`sleep`猜测完成时间。
+4. 随机数据解决并发冲突，临时数据库或安全清理解决数据残留；两者不是一回事。
+5. 该项目定位为“核心接口回归”，不是全接口覆盖或性能测试框架。

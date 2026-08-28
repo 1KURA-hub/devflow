@@ -13,40 +13,67 @@ export function ProfilePage() {
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [lists, setLists] = useState({ followers: [], following: [] });
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "posts");
-  const [postAuthor, setPostAuthor] = useState(null);
+  const [loadedProfile, setLoadedProfile] = useState(null);
   const [followed, setFollowed] = useState(false);
   const [followSubmitting, setFollowSubmitting] = useState(false);
+  const [loadedProfileID, setLoadedProfileID] = useState("");
   const currentUserID = user?.id;
   const loader = useCallback((params) => api.userPosts(id, params), [id]);
   const profileUser = useMemo(() => {
     if (user && String(user.id) === id) {
       return user;
     }
-    return postAuthor || [...lists.followers, ...lists.following].find((item) => String(item.id) === id) || null;
-  }, [id, lists.followers, lists.following, postAuthor, user]);
+    if (loadedProfileID !== id) {
+      return null;
+    }
+    return loadedProfile;
+  }, [id, loadedProfile, loadedProfileID, user]);
   const profileName = profileUser?.nickname || `用户 #${id}`;
   const profileBio = profileUser?.bio || "记录公开的工程进展与技术动态。";
   const isOwnProfile = user && String(user.id) === id;
 
   useEffect(() => {
     setActiveTab(searchParams.get("tab") || "posts");
+  }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    setLoadedProfileID("");
+    setLoadedProfile(null);
+    setStats({ posts: 0, followers: 0, following: 0 });
+    setLists({ followers: [], following: [] });
+    setFollowed(false);
+
+    api.userProfile(id)
+      .then((profile) => {
+        if (!active) {
+          return;
+        }
+        setLoadedProfile(profile.user);
+        setStats(profile.stats);
+        setLoadedProfileID(id);
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setLoadedProfile(null);
+        setStats({ posts: 0, followers: 0, following: 0 });
+      });
+
     const followStateRequest =
       currentUserID && String(currentUserID) !== id
         ? api.followState(id).catch(() => ({ followed: false }))
         : Promise.resolve({ followed: false });
     Promise.all([
-      api.userPosts(id, { limit: 50 }),
       api.followers(id, { limit: 50 }),
       api.followingUsers(id, { limit: 50 }),
       followStateRequest
     ])
-      .then(([posts, followers, following, followState]) => {
-        setPostAuthor(posts.items[0]?.author || null);
-        setStats({
-          posts: posts.items.length,
-          followers: followers.items.length,
-          following: following.items.length
-        });
+      .then(([followers, following, followState]) => {
+        if (!active) {
+          return;
+        }
         setLists({
           followers: followers.items,
           following: following.items
@@ -54,12 +81,16 @@ export function ProfilePage() {
         setFollowed(Boolean(followState.followed));
       })
       .catch(() => {
-        setPostAuthor(null);
-        setStats({ posts: 0, followers: 0, following: 0 });
+        if (!active) {
+          return;
+        }
         setLists({ followers: [], following: [] });
         setFollowed(false);
       });
-  }, [currentUserID, id, searchParams]);
+    return () => {
+      active = false;
+    };
+  }, [currentUserID, id]);
 
   async function toggleFollow() {
     if (followSubmitting) {
@@ -126,7 +157,7 @@ export function ProfilePage() {
           </div>
         </section>
       ) : null}
-      <section className="surface profile-header">
+      <section className="surface profile-header" aria-label="开发者资料">
         <Avatar user={profileUser} label={profileName} className="avatar" />
         <div>
           <p className="eyebrow">开发者主页</p>
@@ -144,8 +175,13 @@ export function ProfilePage() {
             <strong>{stats.followers}</strong> 粉丝
           </button>
         </div>
-        {user && String(user.id) !== id ? (
-          <button className={followed ? "ghost-button" : "primary-button"} onClick={toggleFollow} disabled={followSubmitting}>
+        {user && String(user.id) !== id && loadedProfileID === id ? (
+          <button
+            className={followed ? "ghost-button" : "primary-button"}
+            aria-label={`${followed ? "取消关注" : "关注"} ${profileName}`}
+            onClick={toggleFollow}
+            disabled={followSubmitting}
+          >
             {followed ? "取消关注" : "关注"}
           </button>
         ) : null}

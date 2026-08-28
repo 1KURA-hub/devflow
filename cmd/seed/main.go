@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"devflow/internal/auth"
@@ -30,6 +32,9 @@ type seedPost struct {
 
 func main() {
 	cfg := config.Load()
+	if err := ensureSeedAllowed(cfg.AppEnv); err != nil {
+		log.Fatal(err)
+	}
 	database, err := db.Open(cfg)
 	if err != nil {
 		log.Fatalf("open database: %v", err)
@@ -39,6 +44,13 @@ func main() {
 		log.Fatalf("seed database: %v", err)
 	}
 	log.Println("demo data seeded")
+}
+
+func ensureSeedAllowed(appEnv string) error {
+	if strings.EqualFold(strings.TrimSpace(appEnv), "prod") {
+		return errors.New("refusing to seed data in production")
+	}
+	return nil
 }
 
 func seed(database *gorm.DB) error {

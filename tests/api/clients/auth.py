@@ -22,5 +22,8 @@ class AuthClient:
     def me(self) -> ApiResponse:
         return self.http.get("/api/me")
 
+    def user_profile(self, user_id: int) -> ApiResponse:
+        return self.http.get(f"/api/users/{user_id}")
+
     def update_me(self, **fields) -> ApiResponse:
         return self.http.patch("/api/me", json=fields)

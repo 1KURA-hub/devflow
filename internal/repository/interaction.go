@@ -29,10 +29,14 @@ func (r *InteractionRepository) AddLike(ctx context.Context, userID, postID uint
 		if !created {
 			return nil
 		}
-		if err := tx.Model(&model.Post{}).
+		update := tx.Model(&model.Post{}).
 			Where("id = ? AND status = ?", postID, 1).
-			UpdateColumn("like_count", gorm.Expr("like_count + ?", 1)).Error; err != nil {
-			return err
+			UpdateColumn("like_count", gorm.Expr("like_count + ?", 1))
+		if update.Error != nil {
+			return update.Error
+		}
+		if update.RowsAffected == 0 {
+			return ErrNotFound
 		}
 		return nil
 	})
@@ -72,10 +76,14 @@ func (r *InteractionRepository) AddFavorite(ctx context.Context, userID, postID 
 		if !created {
 			return nil
 		}
-		if err := tx.Model(&model.Post{}).
+		update := tx.Model(&model.Post{}).
 			Where("id = ? AND status = ?", postID, 1).
-			UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", 1)).Error; err != nil {
-			return err
+			UpdateColumn("favorite_count", gorm.Expr("favorite_count + ?", 1))
+		if update.Error != nil {
+			return update.Error
+		}
+		if update.RowsAffected == 0 {
+			return ErrNotFound
 		}
 		return nil
 	})

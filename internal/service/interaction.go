@@ -45,13 +45,14 @@ func (s *InteractionService) Like(ctx context.Context, userID, postID uint64) er
 	if s.notifications == nil {
 		return nil
 	}
-	return s.notifications.Create(ctx, CreateNotificationInput{
+	logSideEffectErr("notification_like", s.notifications.Create(ctx, CreateNotificationInput{
 		UserID:  post.AuthorID,
 		ActorID: userID,
 		Type:    NotificationLike,
 		PostID:  &postID,
 		Content: "有人点赞了你的动态",
-	})
+	}), "post_id", postID, "user_id", userID)
+	return nil
 }
 
 func (s *InteractionService) Unlike(ctx context.Context, userID, postID uint64) error {
@@ -91,13 +92,14 @@ func (s *InteractionService) Favorite(ctx context.Context, userID, postID uint64
 	if s.notifications == nil {
 		return nil
 	}
-	return s.notifications.Create(ctx, CreateNotificationInput{
+	logSideEffectErr("notification_favorite", s.notifications.Create(ctx, CreateNotificationInput{
 		UserID:  post.AuthorID,
 		ActorID: userID,
 		Type:    NotificationFavorite,
 		PostID:  &postID,
 		Content: "有人收藏了你的动态",
-	})
+	}), "post_id", postID, "user_id", userID)
+	return nil
 }
 
 func (s *InteractionService) Unfavorite(ctx context.Context, userID, postID uint64) error {

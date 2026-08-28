@@ -8,6 +8,7 @@ export function NotificationsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
   const unreadCount = items.filter((item) => !item.is_read).length;
 
   useEffect(() => {
@@ -18,19 +19,36 @@ export function NotificationsPage() {
   }, []);
 
   async function markRead(id) {
-    await api.markRead(id);
-    setItems((current) => current.map((item) => (item.id === id ? { ...item, is_read: true } : item)));
+    setActionError("");
+    try {
+      await api.markRead(id);
+      setItems((current) => current.map((item) => (item.id === id ? { ...item, is_read: true } : item)));
+      window.dispatchEvent(new Event("devflow:notifications-changed"));
+    } catch (nextError) {
+      setActionError(nextError.message);
+    }
   }
 
   async function markAll() {
-    await api.markAllRead();
-    setItems((current) => current.map((item) => ({ ...item, is_read: true })));
+    setActionError("");
+    try {
+      await api.markAllRead();
+      setItems((current) => current.map((item) => ({ ...item, is_read: true })));
+      window.dispatchEvent(new Event("devflow:notifications-changed"));
+    } catch (nextError) {
+      setActionError(nextError.message);
+    }
   }
 
   async function openNotification(item) {
     if (!item.is_read) {
-      await api.markRead(item.id);
-      setItems((current) => current.map((next) => (next.id === item.id ? { ...next, is_read: true } : next)));
+      try {
+        await api.markRead(item.id);
+        setItems((current) => current.map((next) => (next.id === item.id ? { ...next, is_read: true } : next)));
+        window.dispatchEvent(new Event("devflow:notifications-changed"));
+      } catch (nextError) {
+        setActionError(nextError.message);
+      }
     }
     if (item.post_id) {
       navigate(`/post/${item.post_id}`);
@@ -74,11 +92,17 @@ export function NotificationsPage() {
           全部已读 {unreadCount}
         </button>
       </header>
+      {actionError ? <p className="form-error" role="alert">{actionError}</p> : null}
       <div className="surface notification-list">
         {items.length === 0 ? <p className="muted-copy">暂时没有通知。</p> : null}
         {items.map((item) => (
-          <article key={item.id} className={item.is_read ? "read" : ""}>
-            <button className="notification-link" type="button" onClick={() => openNotification(item)}>
+          <article key={item.id} data-testid={`notification-${item.id}`} className={item.is_read ? "read" : ""}>
+            <button
+              className="notification-link"
+              type="button"
+              aria-label={`打开通知：${notificationText(item)}`}
+              onClick={() => openNotification(item)}
+            >
               <Avatar user={item.actor} label={item.actor?.nickname || item.actor?.username || "D"} className="tiny-avatar" />
               <div>
                 <strong>{notificationText(item)}</strong>

@@ -7,7 +7,7 @@ import (
 )
 
 type Post struct {
-	ID            uint64         `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID            uint64         `gorm:"primaryKey;autoIncrement;index:idx_posts_author_created,priority:3;index:idx_posts_created_at,priority:2" json:"id"`
 	AuthorID      uint64         `gorm:"not null;index:idx_posts_author_created,priority:1" json:"author_id"`
 	Author        *User          `gorm:"foreignKey:AuthorID" json:"author,omitempty"`
 	Title         string         `gorm:"type:varchar(120);not null" json:"title"`
@@ -18,8 +18,8 @@ type Post struct {
 	CommentCount  int64          `gorm:"not null;default:0" json:"comment_count"`
 	FavoriteCount int64          `gorm:"not null;default:0" json:"favorite_count"`
 	Status        int8           `gorm:"not null;default:1" json:"status"`
-	CreatedAt     time.Time      `gorm:"index:idx_posts_author_created,priority:2;index:idx_posts_created_at" json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
+	CreatedAt     time.Time      `gorm:"type:datetime(6);index:idx_posts_author_created,priority:2;index:idx_posts_created_at,priority:1" json:"created_at"`
+	UpdatedAt     time.Time      `gorm:"type:datetime(6)" json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`
 }
 

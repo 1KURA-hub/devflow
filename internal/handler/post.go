@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	tokenauth "devflow/internal/auth"
 	"devflow/internal/middleware"
 	"devflow/internal/model"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 	"devflow/internal/response"
 	"devflow/internal/service"
@@ -79,7 +79,7 @@ func (a *App) getPost(c *gin.Context) {
 }
 
 func (a *App) listLatestPosts(c *gin.Context) {
-	input, err := parseListQuery(c)
+	input, err := parseListQuery(c, pagination.KindChronological)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -94,7 +94,7 @@ func (a *App) listLatestPosts(c *gin.Context) {
 }
 
 func (a *App) listHotPosts(c *gin.Context) {
-	input, err := parseListQuery(c)
+	input, err := parseListQuery(c, pagination.KindHot)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -114,7 +114,7 @@ func (a *App) listUserPosts(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "invalid user id")
 		return
 	}
-	input, err := parseListQuery(c)
+	input, err := parseListQuery(c, pagination.KindChronological)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
@@ -213,7 +213,7 @@ func parseUint64Param(c *gin.Context, name string) (uint64, error) {
 	return id, nil
 }
 
-func parseListQuery(c *gin.Context) (service.ListInput, error) {
+func parseListQuery(c *gin.Context, cursorKind pagination.Kind) (service.ListInput, error) {
 	limit := 0
 	if raw := c.Query("limit"); raw != "" {
 		parsed, err := strconv.Atoi(raw)
@@ -223,13 +223,13 @@ func parseListQuery(c *gin.Context) (service.ListInput, error) {
 		limit = parsed
 	}
 
-	var cursor *time.Time
+	var cursor *pagination.Cursor
 	if raw := c.Query("cursor"); raw != "" {
-		parsed, err := time.Parse(time.RFC3339Nano, raw)
+		parsed, err := pagination.Decode(raw, cursorKind)
 		if err != nil {
 			return service.ListInput{}, errors.New("invalid cursor")
 		}
-		cursor = &parsed
+		cursor = parsed
 	}
 
 	return service.ListInput{

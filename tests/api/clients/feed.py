@@ -17,10 +17,18 @@ class FeedClient:
             params["cursor"] = cursor
         return self.http.get("/api/feed/latest", params=params or None)
 
-    def hot(self, limit: Optional[int] = None) -> ApiResponse:
-        params = {"limit": limit} if limit else None
-        return self.http.get("/api/feed/hot", params=params)
+    def hot(self, limit: Optional[int] = None, cursor: Optional[str] = None) -> ApiResponse:
+        params = {}
+        if limit:
+            params["limit"] = limit
+        if cursor:
+            params["cursor"] = cursor
+        return self.http.get("/api/feed/hot", params=params or None)
 
-    def following(self, limit: Optional[int] = None) -> ApiResponse:
-        params = {"limit": limit} if limit else None
-        return self.http.get("/api/feed/following", params=params)
+    def following(self, limit: Optional[int] = None, cursor: Optional[str] = None) -> ApiResponse:
+        params = {}
+        if limit:
+            params["limit"] = limit
+        if cursor:
+            params["cursor"] = cursor
+        return self.http.get("/api/feed/following", params=params or None)

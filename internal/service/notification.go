@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"time"
 
 	"devflow/internal/cache"
 	"devflow/internal/model"
 	"devflow/internal/mq"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 )
 
@@ -174,7 +174,10 @@ func buildNotificationListResult(notifications []model.Notification, limit int) 
 		HasMore: hasMore,
 	}
 	if hasMore && len(notifications) > 0 {
-		result.NextCursor = notifications[len(notifications)-1].CreatedAt.Format(time.RFC3339Nano)
+		result.NextCursor, _ = pagination.Encode(pagination.Chronological(
+			notifications[len(notifications)-1].CreatedAt,
+			notifications[len(notifications)-1].ID,
+		))
 	}
 	return result
 }

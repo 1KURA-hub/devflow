@@ -1,1 +1,46 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+!.env.prod.example
+!.env.remote.example
+
+# OS and IDE files
+.DS_Store
+**/.DS_Store
+.idea/
+**/.idea/
+.vscode/
+
+# Python
+.venv/
+**/.venv/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+**/.pytest_cache/
+*.py[cod]
+coverage.xml
+htmlcov/
+
+# Allure reports
+**/allure-results/
+**/allure-report/
+
+# Node and build output
+web/node_modules/
+web/dist/
+tests/e2e/node_modules/
+
+# Playwright reports, artifacts, and auth state
+tests/e2e/playwright-report/
+tests/e2e/test-results/
+tests/e2e/blob-report/
+tests/e2e/.auth/
+tests/e2e/midscene_run/
+
+# Local runtime output
 uploads/
+devflow-server
+server.log
+server.pid

@@ -30,16 +30,29 @@ func StartFeedConsumer(ctx context.Context, broker *mq.Broker, posts *service.Po
 				var event mq.PostPublishedEvent
 				if err := json.Unmarshal(delivery.Body, &event); err != nil {
 					log.Printf("feed worker decode event failed: body_len=%d err=%v", len(delivery.Body), err)
-					_ = delivery.Nack(false, false)
+					if deadLetterErr := broker.DeadLetter(ctx, mq.QueueFeedDistribute, delivery, "invalid_json: "+err.Error()); deadLetterErr != nil {
+						log.Printf("feed worker dead-letter invalid JSON failed: err=%v", deadLetterErr)
+					}
+					continue
+				}
+				if err := validatePostPublishedEvent(event); err != nil {
+					log.Printf("feed worker invalid event: event_id=%s err=%v", event.EventID, err)
+					if deadLetterErr := broker.DeadLetter(ctx, mq.QueueFeedDistribute, delivery, "invalid_event: "+err.Error()); deadLetterErr != nil {
+						log.Printf("feed worker dead-letter invalid event failed: event_id=%s err=%v", event.EventID, deadLetterErr)
+					}
 					continue
 				}
 				if err := posts.DistributeFeedNow(ctx, event.AuthorID, event.PostID, event.CreatedAt); err != nil {
 					log.Printf("feed worker distribute failed: event_id=%s author_id=%d post_id=%d err=%v",
 						event.EventID, event.AuthorID, event.PostID, err)
-					_ = delivery.Nack(false, false)
+					if retryErr := broker.RetryOrDeadLetter(ctx, mq.QueueFeedDistribute, delivery, err); retryErr != nil {
+						log.Printf("feed worker retry/dead-letter failed: event_id=%s err=%v", event.EventID, retryErr)
+					}
 					continue
 				}
-				_ = delivery.Ack(false)
+				if err := delivery.Ack(false); err != nil {
+					log.Printf("feed worker ack failed: event_id=%s err=%v", event.EventID, err)
+				}
 			}
 		}
 	}()
