@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"devflow/internal/model"
+	"devflow/internal/pagination"
 
 	"gorm.io/gorm"
 )
@@ -22,13 +22,20 @@ func (r *CommentRepository) Create(ctx context.Context, comment *model.Comment) 
 		if err := tx.Create(comment).Error; err != nil {
 			return err
 		}
-		return tx.Model(&model.Post{}).
+		update := tx.Model(&model.Post{}).
 			Where("id = ? AND status = ?", comment.PostID, 1).
-			UpdateColumn("comment_count", gorm.Expr("comment_count + ?", 1)).Error
+			UpdateColumn("comment_count", gorm.Expr("comment_count + ?", 1))
+		if update.Error != nil {
+			return update.Error
+		}
+		if update.RowsAffected == 0 {
+			return ErrNotFound
+		}
+		return nil
 	})
 }
 
-func (r *CommentRepository) ListByPost(ctx context.Context, postID uint64, cursor *time.Time, limit int) ([]model.Comment, error) {
+func (r *CommentRepository) ListByPost(ctx context.Context, postID uint64, cursor *pagination.Cursor, limit int) ([]model.Comment, error) {
 	query := r.db.WithContext(ctx).
 		Preload("User").
 		Where("post_id = ? AND status = ?", postID, 1).
@@ -36,7 +43,17 @@ func (r *CommentRepository) ListByPost(ctx context.Context, postID uint64, curso
 		Order("id DESC").
 		Limit(limit)
 	if cursor != nil {
-		query = query.Where("created_at < ?", *cursor)
+		createdAt := cursor.CreatedAt()
+		if cursor.ID == 0 {
+			query = query.Where("created_at < ?", createdAt)
+		} else {
+			query = query.Where(
+				"(created_at < ?) OR (created_at = ? AND id < ?)",
+				createdAt,
+				createdAt,
+				cursor.ID,
+			)
+		}
 	}
 
 	var comments []model.Comment

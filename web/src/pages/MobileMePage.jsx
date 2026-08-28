@@ -184,7 +184,13 @@ export function MobileMePage() {
 
   async function markPreviewNotificationsRead() {
     if (user) {
-      await api.markAllRead().catch(() => {});
+      try {
+        await api.markAllRead();
+        window.dispatchEvent(new Event("devflow:notifications-changed"));
+      } catch (error) {
+        setPreviewError(error.message || "请求失败");
+        return;
+      }
     }
     setNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
   }

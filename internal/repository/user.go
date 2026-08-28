@@ -18,7 +18,11 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
-	return r.db.WithContext(ctx).Create(user).Error
+	err := r.db.WithContext(ctx).Create(user).Error
+	if isDuplicateEntry(err) {
+		return ErrDuplicate
+	}
+	return err
 }
 
 func (r *UserRepository) FindByID(ctx context.Context, id uint64) (*model.User, error) {

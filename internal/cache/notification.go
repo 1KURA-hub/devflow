@@ -3,13 +3,18 @@ package cache
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
+const notificationCounterTTL = 30 * time.Second
+
 const incrementIfExistsScript = `
 if redis.call("EXISTS", KEYS[1]) == 1 then
-	return redis.call("INCR", KEYS[1])
+	local count = redis.call("INCR", KEYS[1])
+	redis.call("EXPIRE", KEYS[1], ARGV[1])
+	return count
 end
 return 0
 `
@@ -41,14 +46,19 @@ func (c *NotificationCounter) Set(ctx context.Context, userID uint64, count int6
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return c.client.Set(ctx, unreadNotificationKey(userID), count, 0).Err()
+	return c.client.Set(ctx, unreadNotificationKey(userID), count, notificationCounterTTL).Err()
 }
 
 func (c *NotificationCounter) IncrementIfExists(ctx context.Context, userID uint64) error {
 	if c == nil || c.client == nil {
 		return nil
 	}
-	return c.client.Eval(ctx, incrementIfExistsScript, []string{unreadNotificationKey(userID)}).Err()
+	return c.client.Eval(
+		ctx,
+		incrementIfExistsScript,
+		[]string{unreadNotificationKey(userID)},
+		int64(notificationCounterTTL/time.Second),
+	).Err()
 }
 
 func (c *NotificationCounter) Delete(ctx context.Context, userID uint64) error {

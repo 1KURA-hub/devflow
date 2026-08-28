@@ -10,6 +10,7 @@ import (
 	"devflow/internal/cache"
 	"devflow/internal/model"
 	"devflow/internal/mq"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 )
 
@@ -37,7 +38,7 @@ type CreatePostInput struct {
 }
 
 type ListInput struct {
-	Cursor *time.Time
+	Cursor *pagination.Cursor
 	Limit  int
 }
 
@@ -111,11 +112,14 @@ func (s *PostService) DistributeFeedNow(ctx context.Context, authorID, postID ui
 	if err != nil {
 		return err
 	}
+	var distributeErr error
 	for _, followerID := range followerIDs {
-		logSideEffectErr("inbox_add", s.inboxes.AddPost(ctx, followerID, postID, createdAt),
-			"follower_id", followerID, "post_id", postID)
+		if err := s.inboxes.AddPost(ctx, followerID, postID, createdAt); err != nil {
+			logSideEffectErr("inbox_add", err, "follower_id", followerID, "post_id", postID)
+			distributeErr = errors.Join(distributeErr, err)
+		}
 	}
-	return nil
+	return distributeErr
 }
 
 func (s *PostService) Get(ctx context.Context, id uint64) (*model.Post, error) {
@@ -155,19 +159,27 @@ func (s *PostService) ListLatest(ctx context.Context, input ListInput) (*PostLis
 
 func (s *PostService) ListHot(ctx context.Context, input ListInput) (*PostListResult, error) {
 	limit := normalizeLimit(input.Limit)
-	if ids, available, err := s.hotPosts.TopPostIDs(ctx, int64(limit+1)); err == nil && available && len(ids) > 0 {
-		posts, err := s.posts.ListByIDs(ctx, ids)
-		if err != nil {
-			return nil, err
+	// Redis 热门榜只负责加速首屏。它是有限 topN 快照，后续页面必须按
+	// score+id 游标查询 MySQL，才能继续访问快照边界之外的热门动态。
+	if input.Cursor == nil {
+		if hotItems, available, err := s.hotPosts.List(ctx, nil, int64(limit+1)); err == nil && available && len(hotItems) > 0 {
+			ids := hotPostIDs(hotItems)
+			posts, err := s.posts.ListByIDs(ctx, ids)
+			if err != nil {
+				return nil, err
+			}
+			// 缓存含已删除的残留 ID 时回源，避免首屏缺项或提前结束分页。
+			if len(posts) == len(ids) {
+				return buildHotPostListResult(orderPostsByIDs(posts, ids), limit, hotPostScores(hotItems)), nil
+			}
 		}
-		return buildPostListResult(orderPostsByIDs(posts, ids), limit), nil
 	}
 
-	posts, err := s.posts.ListHot(ctx, limit+1)
+	posts, err := s.posts.ListHot(ctx, input.Cursor, limit+1)
 	if err != nil {
 		return nil, err
 	}
-	return buildPostListResult(posts, limit), nil
+	return buildHotPostListResult(posts, limit, nil), nil
 }
 
 func (s *PostService) ListByAuthor(ctx context.Context, authorID uint64, input ListInput) (*PostListResult, error) {
@@ -210,9 +222,52 @@ func buildPostListResult(posts []model.Post, limit int) *PostListResult {
 		HasMore: hasMore,
 	}
 	if hasMore && len(posts) > 0 {
-		result.NextCursor = posts[len(posts)-1].CreatedAt.Format(time.RFC3339Nano)
+		result.NextCursor, _ = pagination.Encode(pagination.Chronological(
+			posts[len(posts)-1].CreatedAt,
+			posts[len(posts)-1].ID,
+		))
 	}
 	return result
+}
+
+func buildHotPostListResult(posts []model.Post, limit int, scores map[uint64]int64) *PostListResult {
+	hasMore := len(posts) > limit
+	if hasMore {
+		posts = posts[:limit]
+	}
+
+	result := &PostListResult{
+		Items:   posts,
+		HasMore: hasMore,
+	}
+	if hasMore && len(posts) > 0 {
+		last := posts[len(posts)-1]
+		score := hotScore(last.LikeCount, last.FavoriteCount, last.CommentCount)
+		if cachedScore, ok := scores[last.ID]; ok {
+			score = cachedScore
+		}
+		result.NextCursor, _ = pagination.Encode(pagination.Hot(
+			score,
+			last.ID,
+		))
+	}
+	return result
+}
+
+func hotPostIDs(items []cache.HotPostItem) []uint64 {
+	ids := make([]uint64, 0, len(items))
+	for _, item := range items {
+		ids = append(ids, item.PostID)
+	}
+	return ids
+}
+
+func hotPostScores(items []cache.HotPostItem) map[uint64]int64 {
+	scores := make(map[uint64]int64, len(items))
+	for _, item := range items {
+		scores[item.PostID] = item.Score
+	}
+	return scores
 }
 
 func orderPostsByIDs(posts []model.Post, ids []uint64) []model.Post {
@@ -254,7 +309,7 @@ const HotPostsRebuildLimit = 200
 // RebuildHotPosts 从 MySQL 拉取 topN 帖子，按统一公式算分并整体重写 Redis 热门榜，
 // 解决缓存丢失/淘汰后被零散 ZADD 填出"半截榜"的问题。
 func (s *PostService) RebuildHotPosts(ctx context.Context) error {
-	posts, err := s.posts.ListHot(ctx, HotPostsRebuildLimit)
+	posts, err := s.posts.ListHot(ctx, nil, HotPostsRebuildLimit)
 	if err != nil {
 		return err
 	}

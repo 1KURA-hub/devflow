@@ -1,4 +1,24 @@
 const tokenKey = "devflow_token";
+const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS);
+const defaultRequestTimeoutMS =
+  Number.isFinite(configuredTimeout) && configuredTimeout > 0 ? configuredTimeout : 10_000;
+
+export class ApiError extends Error {
+  constructor(message, { status = 0, code = null, kind = "api", cause } = {}) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.kind = kind;
+    if (cause) {
+      this.cause = cause;
+    }
+  }
+}
+
+export function isUnauthorizedError(error) {
+  return error instanceof ApiError && error.status === 401;
+}
 
 export function getStoredToken() {
   return localStorage.getItem(tokenKey);
@@ -13,23 +33,57 @@ export function setStoredToken(token) {
 }
 
 async function request(path, options = {}) {
+  const { signal: externalSignal, timeout = defaultRequestTimeoutMS, ...fetchOptions } = options;
   const token = getStoredToken();
-  const isFormData = options.body instanceof FormData;
+  const isFormData = fetchOptions.body instanceof FormData;
   const headers = {
     ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    ...(options.headers || {})
+    ...(fetchOptions.headers || {})
   };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(path, {
-    ...options,
-    headers
-  });
+  const controller = new AbortController();
+  let timedOut = false;
+  const abortFromExternalSignal = () => controller.abort(externalSignal?.reason);
+  if (externalSignal?.aborted) {
+    abortFromExternalSignal();
+  } else {
+    externalSignal?.addEventListener("abort", abortFromExternalSignal, { once: true });
+  }
+  const timeoutID = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout);
+
+  let response;
+  try {
+    response = await fetch(path, {
+      ...fetchOptions,
+      headers,
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (timedOut) {
+      throw new ApiError("请求超时，请稍后重试", { kind: "timeout", cause: error });
+    }
+    if (controller.signal.aborted) {
+      throw new ApiError("请求已取消", { kind: "aborted", cause: error });
+    }
+    throw new ApiError("网络连接失败，请检查网络后重试", { kind: "network", cause: error });
+  } finally {
+    globalThis.clearTimeout(timeoutID);
+    externalSignal?.removeEventListener("abort", abortFromExternalSignal);
+  }
+
   const payload = await response.json().catch(() => null);
   if (!response.ok || payload?.code !== 0) {
-    throw new Error(payload?.message || "请求失败");
+    throw new ApiError(payload?.message || "请求失败", {
+      status: response.status,
+      code: payload?.code ?? response.status,
+      kind: "http"
+    });
   }
   return payload.data;
 }
@@ -71,6 +125,7 @@ export const api = {
       body: JSON.stringify(body)
     }),
   deletePost: (id) => request(`/api/posts/${id}`, { method: "DELETE" }),
+  userProfile: (id) => request(`/api/users/${id}`),
   userPosts: (id, params) => request(`/api/users/${id}/posts${query(params)}`),
   followers: (id, params) => request(`/api/users/${id}/followers${query(params)}`),
   followingUsers: (id, params) => request(`/api/users/${id}/following${query(params)}`),

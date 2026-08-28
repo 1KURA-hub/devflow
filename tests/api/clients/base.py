@@ -49,9 +49,9 @@ class BaseClient:
         else:
             self.session.headers.pop("Authorization", None)
 
-    def clone(self) -> "BaseClient":
-        """复制一个新的 client（独立 session），方便模拟多个用户。"""
-        return BaseClient(self.base_url)
+    def close(self) -> None:
+        """释放连接池资源；由 fixture 或临时 client 的创建方调用。"""
+        self.session.close()
 
     def request(
         self,
@@ -72,7 +72,8 @@ class BaseClient:
         body: dict = {}
         if resp.content:
             try:
-                body = resp.json()
+                parsed = resp.json()
+                body = parsed if isinstance(parsed, dict) else {}
             except ValueError:
                 body = {}
         return ApiResponse(

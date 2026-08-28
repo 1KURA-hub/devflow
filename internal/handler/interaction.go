@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"devflow/internal/middleware"
+	"devflow/internal/pagination"
 	"devflow/internal/repository"
 	"devflow/internal/response"
 	"devflow/internal/service"
@@ -66,7 +67,7 @@ func (a *App) listMyFavorites(c *gin.Context) {
 		response.Error(c, http.StatusUnauthorized, "unauthorized")
 		return
 	}
-	input, err := parseListQuery(c)
+	input, err := parseListQuery(c, pagination.KindChronological)
 	if err != nil {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return

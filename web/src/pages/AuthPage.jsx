@@ -98,7 +98,7 @@ export function AuthPage({ mode }) {
             />
           </span>
         </label>
-        {error ? <p className="form-error">{error}</p> : null}
+        {error ? <p className="form-error" role="alert">{error}</p> : null}
         <button className="primary-button auth-submit" disabled={submitting}>
           {submitting ? "处理中..." : mode === "register" ? "注册" : "登录"}
           <ArrowRight size={17} />

@@ -1,0 +1,28 @@
+{
+  "name": "devflow-playwright-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "test": "npm run typecheck && playwright test",
+    "test:ai": "npm run typecheck && playwright test --config=playwright.midscene.config.ts",
+    "test:ai:headed": "npm run typecheck && playwright test --config=playwright.midscene.config.ts --headed",
+    "test:list": "playwright test --list --reporter=line",
+    "test:ui": "playwright test tests/auth.spec.ts tests/post-flow.spec.ts tests/social-flow.spec.ts",
+    "test:network": "playwright test tests/network.spec.ts",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:report": "playwright show-report",
+    "allure:serve": "allure serve allure-results",
+    "allure:report": "allure generate allure-results --clean -o allure-report && allure open allure-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@midscene/web": "1.12.0",
+    "@playwright/test": "1.60.0",
+    "@types/node": "24.10.1",
+    "allure-commandline": "2.43.0",
+    "allure-playwright": "3.10.2",
+    "dotenv": "17.4.2",
+    "typescript": "5.9.3"
+  }
+}

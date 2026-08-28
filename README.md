@@ -1,211 +1,222 @@
-# DevFlow
+# DevFlow 测试开发作品集
 
-DevFlow 是一个面向开发者社区的动态平台后端，包含注册登录、发帖、关注、点赞/收藏/评论、通知中心，以及三种 Feed（最新、热门、关注流）。
+DevFlow 是一个可本地运行的开发者社区应用。本仓库以同一套真实业务系统为被测对象，展示
+`pytest + requests` 接口自动化与 `TypeScript + Playwright` UI 自动化如何分层协作，并用
+`Midscene` 补充一条按需运行的自然语言复杂场景。重点覆盖测试隔离、异步链路、故障注入、
+失败证据和持续集成。
 
-## 技术栈
+## 项目目标
 
-- 后端：Go、Gin、GORM
-- 数据库：MySQL 8
-- 缓存：Redis 7
-- 消息队列：RabbitMQ 3
-- 前端：React + Vite（`web/`）
-- 部署：Docker / Docker Compose / GitHub Actions
+- 用接口测试深挖参数边界、权限、幂等性、并发一致性和跨组件业务契约。
+- 用浏览器测试验证登录、发帖、互动、关注流和通知等关键用户旅程。
+- 让每条测试可以独立、重复运行，并明确区分真实后端故障与前端故障注入。
+- 在 CI 中同时执行单元/构建、API 回归和浏览器回归，并保留可定位的测试产物。
 
-## 核心能力
+## 覆盖矩阵
 
-- 用户：注册、登录、获取/更新个人信息
-- 动态：发布、详情、删除、用户动态列表
-- 关系：关注/取关、关注状态、关注/粉丝列表
-- 互动：点赞、收藏、评论
-- Feed：
-  - `latest`：按时间倒序
-  - `hot`：按互动热度排序（Redis 优先，MySQL 回退）
-  - `following`：基于 inbox 的关注流（支持冷启动降级）
-- 通知：异步通知落库、未读数缓存、已读/全部已读
+| 领域 | pytest 接口层 | Playwright UI层 |
+| --- | --- | --- |
+| 认证 | 注册/登录、参数边界、重复用户名、同名并发注册、无效Token | 登录、错误密码、未登录重定向、刷新后保持状态 |
+| 动态 | 创建/查询/删除、权限、字段校验 | 发布、详情、评论、收藏列表 |
+| 互动 | 点赞幂等与取消、收藏状态与列表、评论 | 点赞/收藏状态与接口结果交叉校验 |
+| 关注与Feed | 关注状态与用户列表、关注自己校验、following Feed | 关注后在关注流看到目标动态 |
+| 通知 | 点赞通知、未读数、全部已读、异步通知契约 | 查看、标记已读并打开关联动态 |
+| 异常处理 | 真实MySQL/Redis/RabbitMQ协作链路 | HTTP 500、401、断网、乐观更新回滚 |
 
-## 项目结构
+## 测试架构
 
 ```text
-devflow/
-├── cmd/
-│   ├── server/     # HTTP 服务入口
-│   ├── worker/     # MQ 消费者入口（拆分部署时使用）
-│   └── seed/       # 演示数据初始化
-├── internal/
-│   ├── handler/    # 路由与 HTTP 处理
-│   ├── service/    # 业务逻辑
-│   ├── repository/ # DB 访问
-│   ├── cache/      # Redis 访问封装
-│   ├── mq/         # RabbitMQ 封装
-│   └── worker/     # 消费逻辑
-├── migrations/     # SQL 初始化脚本
-├── tests/api/      # pytest 接口自动化
-└── web/            # 前端
+GitHub Actions: quality.yml
+├── unit-build
+│   ├── Go tests
+│   └── React/Vite build
+├── api-tests
+│   └── pytest → domain clients → HTTP API → MySQL / Redis / RabbitMQ
+└── e2e
+    ├── Playwright specs → Page Objects → Chromium → React UI
+    ├── fixtures / TestData → 独立用户与测试数据
+    └── route mock → 500 / 401 / 断网 / UI回滚
 ```
 
-## 快速启动（本地开发）
+```text
+tests/api/
+├── clients/          # 按领域封装请求，不写业务断言
+├── conftest.py       # 用户、Token、动态等分层fixture
+└── tests/            # 接口契约与跨链路断言
 
-### 1) 准备环境变量
-
-```bash
-cp .env.example .env
+tests/e2e/
+├── ai/              # 1条按需运行的Midscene自然语言场景
+├── src/api/          # UI数据准备所需的最小API Client
+├── src/components/   # 可复用页面组件
+├── src/pages/        # Page Object
+├── src/fixtures/     # 测试用户、登录态和资源生命周期
+├── src/support/      # 唯一数据与显式清理
+└── tests/            # 4个扁平spec：认证、动态、社交、网络异常
 ```
 
-`.env.example` 关键配置：
+## 最短运行方式
 
-- `HTTP_ADDR`：后端监听地址（默认 `:8080`）
-- `MYSQL_DSN`：MySQL 连接串（默认连本机 `3307`）
-- `REDIS_ADDR`：Redis 地址
-- `RABBITMQ_URL`：RabbitMQ 连接串
-- `JWT_SECRET`：JWT 密钥
-- `DISABLE_WORKERS`：是否禁用 server 进程内 worker（默认 `false`）
+### 环境要求
 
-### 2) 启动依赖
+- Go 1.24+
+- Python 3.11+
+- Node.js 22+
+- Docker与Docker Compose
 
-```bash
-docker compose up -d mysql redis rabbitmq
-```
+### pytest接口回归
 
-### 3) 启动后端
+先在项目根目录启动真实依赖和测试环境API：
 
 ```bash
+docker compose up -d --wait mysql redis rabbitmq
+
+APP_ENV=test \
+AUTO_MIGRATE=true \
+REDIS_ADDR=127.0.0.1:6379 \
+RABBITMQ_URL=amqp://devflow:devflow@127.0.0.1:5672/ \
 go run ./cmd/server
 ```
 
-默认端口：`http://127.0.0.1:8080`
-
-### 4) 启动前端（可选）
-
-```bash
-cd web
-npm install
-npm run dev
-```
-
-## 运行模式
-
-### 模式 A：单体模式（默认）
-
-- 只启动 `cmd/server`
-- server 进程内同时运行 HTTP + MQ 消费者
-- 配置：`DISABLE_WORKERS=false`
-
-### 模式 B：拆分 worker 模式
-
-- `cmd/server` 仅提供 HTTP
-- `cmd/worker` 独立消费 MQ
-- 配置：`DISABLE_WORKERS=true`
-
-本地示例：
-
-```bash
-# 终端 1：HTTP 服务
-DISABLE_WORKERS=true go run ./cmd/server
-
-# 终端 2：MQ 消费者
-go run ./cmd/worker
-```
-
-## 生产部署（Docker Compose）
-
-```bash
-cp .env.prod.example .env.prod
-
-docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build mysql redis rabbitmq app web
-```
-
-初始化演示数据：
-
-```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml run --rm seed
-```
-
-若启用拆分 worker（`DISABLE_WORKERS=true`），可加 profile 启动 worker 服务：
-
-```bash
-docker compose --env-file .env.prod -f docker-compose.prod.yml --profile split up -d worker
-```
-
-## API 自动化测试（pytest）
-
-测试目录：`tests/api/`
+再开一个终端执行：
 
 ```bash
 cd tests/api
-pip install -r requirements.txt
-export DEVFLOW_BASE_URL=http://127.0.0.1:8080
-pytest -v
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pytest
 ```
 
-支持按 marker 运行：
+常用子集：
 
 ```bash
-pytest -m smoke
-pytest -m idempotent
-pytest -m cross
+python -m pytest -m smoke
+python -m pytest -m idempotent
+python -m pytest -m cross
 ```
 
-## CI / CD
+### Playwright UI回归
 
-- `.github/workflows/ci-cd.yml`：Go + Web 构建与部署流程
-- `.github/workflows/api-tests.yml`：接口自动化回归（启动依赖并跑 pytest）
+Playwright会自动启动Go API和Vite UI，本地只需先启动MySQL与Redis：
 
-## 主要接口（摘要）
+```bash
+docker compose up -d --wait mysql redis
+npm ci --prefix web
+npm ci --prefix tests/e2e
 
-### 健康检查
+cd tests/e2e
+npx playwright install chromium
+npm test
+```
 
-- `GET /healthz`
-- `GET /api/healthz`
+常用命令：
 
-### 认证与用户
+```bash
+npm run test:ui
+npm run test:network
+npm run test:headed
+npm run test:debug
+npm run test:report
+```
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/me`
-- `PATCH /api/me`
-- `GET /api/recommended-users`
+### Midscene自然语言复杂场景
 
-### 动态与 Feed
+该场景由API创建独立访客、作者和动态，Midscene再通过自然语言完成“关注作者 →
+在关注流打开动态 → 点赞/收藏/评论 → 作者从通知返回动态”。业务结果由API二次
+校验，测试结束后仍由`TestData`清理。
 
-- `POST /api/posts`
-- `GET /api/posts/:id`
-- `DELETE /api/posts/:id`
-- `GET /api/feed/latest`
-- `GET /api/feed/hot`
-- `GET /api/feed/following`
+```bash
+cd tests/e2e
+cp .env.example .env       # 填入兼容的多模态模型配置
+npm run test:ai            # 无头模式
+npm run test:ai:headed     # 展示模式
+```
 
-### 关系与互动
+运行后可在`tests/e2e/midscene_run/report/`查看每个AI规划、操作和断言的可视化回放。
+Midscene需要调用模型服务，可能产生费用；它不在默认`npm test`和CI中运行。
 
-- `POST /api/users/:id/follow`
-- `DELETE /api/users/:id/follow`
-- `GET /api/users/:id/follow-state`
-- `POST /api/posts/:id/like`
-- `DELETE /api/posts/:id/like`
-- `POST /api/posts/:id/favorite`
-- `DELETE /api/posts/:id/favorite`
-- `POST /api/posts/:id/comments`
-- `GET /api/posts/:id/comments`
+更完整的环境切换与调试说明见[接口测试文档](tests/api/README.md)和
+[Playwright测试文档](tests/e2e/README.md)。
 
-### 通知
+### 查看测试报告
 
-- `GET /api/notifications`
-- `GET /api/notifications/unread-count`
-- `POST /api/notifications/:id/read`
-- `POST /api/notifications/read-all`
+pytest与Playwright运行后会分别生成 `tests/api/allure-results/` 与
+`tests/e2e/allure-results/` 原始数据，用Allure CLI查看：
 
-## 常见问题
+```bash
+cd tests/api && allure serve allure-results   # 或：cd tests/e2e && npm run allure:serve
+```
 
-### 1) 为什么看不到通知？
+Allure CLI需要Java 17+（macOS：`brew install allure`；`tests/e2e`目录已内置
+`allure-commandline`，`npm ci`后可直接用`npx allure`）。CI中的静态Allure报告通过
+Actions artifact下载，浏览器打开即可。
 
-- 检查 `RABBITMQ_URL` 是否配置正确
-- 若未启 worker 拆分模式，确认 `cmd/server` 日志里消费者已启动
-- 若启用了拆分模式，确认 `cmd/worker` 正在运行
+第一次阅读代码建议配合[测试框架讲解](docs/testing-walkthrough.md)，按照一条API用例和
+一条UI用例的真实执行顺序理解，不需要先背完整目录。
 
-### 2) 热门榜为什么会短暂不准？
+## pytest与Playwright的职责边界
 
-- 热门榜优先读 Redis
-- 项目内有定时重建（从 MySQL topN 回灌），用于修复缓存丢失后“半截榜”
+| 层次 | 负责 | 不负责 |
+| --- | --- | --- |
+| pytest | HTTP状态码、响应结构、边界值、权限、幂等、并发、真实跨组件链路 | 重复模拟浏览器操作 |
+| Playwright | 用户可见流程、DOM状态、前后端交叉校验、前端异常反馈 | 重写完整接口回归 |
+| Midscene | 用自然语言和视觉理解执行跨页面复杂旅程 | 替代稳定回归或单独证明业务数据正确 |
+| Playwright APIRequestContext | 为UI用例快速创建/清理数据 | 作为第二套接口测试框架 |
+| `page.route()` | 验证前端收到500、401或网络失败后的表现 | 证明后端能够抵抗真实数据库或MQ故障 |
 
-### 3) 重复关注为什么返回成功？
+## 核心设计取舍
 
-- 关注接口按幂等语义处理，重复关注返回 200，便于前端重试与状态收敛
+### 独立测试数据
+
+接口fixture和Playwright TestData为用例创建唯一用户、标题和关系，避免依赖执行顺序。
+Playwright使用按测试创建的登录态，不共享固定账号；可删除资源在teardown中逆序清理。
+
+### 条件等待而非固定休眠
+
+通知与Feed存在异步可见窗口。接口层按精确条件轮询，UI层使用Playwright自动等待和
+Web-first断言，不用固定`sleep`掩盖竞态。
+
+### 可写环境安全门禁
+
+测试启动前会检查健康接口中的应用标识和`APP_ENV=test`。对外部地址执行写数据回归时，
+还需要显式开启写入授权，降低误连生产或共享环境的风险。
+
+### 失败证据
+
+pytest与Playwright运行后生成Allure测试报告（用例步骤、失败原因、附带的截图/Trace均可追溯）；
+Playwright失败时额外保留Trace、截图和录像，CI失败时保留服务日志，便于区分环境、接口、
+定位器和断言问题。
+
+### AI用例与稳定回归分开
+
+现有13条Playwright用例作为默认质量门禁，不调用模型。Midscene只运行1条适合AI规划的
+跨用户场景，并将确定性的数据准备、结果校验和清理交给Playwright/API基础设施。
+
+## CI
+
+[`.github/workflows/quality.yml`](.github/workflows/quality.yml)在Pull Request、`main`分支推送和
+手动触发时运行三个并行任务：
+
+1. `unit-build`：Go单元测试和Web构建；
+2. `api-tests`：使用MySQL、Redis、RabbitMQ运行pytest回归；
+3. `e2e`：使用MySQL、Redis和Chromium运行TypeScript类型检查及Playwright回归。
+
+每个测试job运行后由workflow下载Allure CLI并生成静态报告；Allure报告、Playwright HTML报告
+以及失败Trace、截图和录像均作为Actions artifact上传。
+作品仓库只展示质量门禁，不包含生产部署和SSH密钥操作。
+
+## 项目亮点（简历摘要）
+
+- 基于`pytest + requests`实现30项接口测试，以client、fixture、用例三层结构覆盖边界值、权限、幂等、并发注册和异步通知链路。
+- 基于TypeScript strict与Playwright实现13项浏览器测试，使用Page Object、组件对象、自定义fixture、独立登录态和TestData覆盖认证、发帖、互动及跨用户流程。
+- 使用`route.fulfill()`和`route.abort()`验证500、401、断网与乐观更新回滚，并通过UI状态与接口结果交叉校验降低假通过。
+- 集成Midscene实现1条可选AI E2E场景，以自然语言执行关注、互动和通知闭环，并用API交叉断言防止视觉假通过。
+- 将Go/Web构建、pytest和Playwright接入三路并行CI，生成Allure测试报告并归档Trace、截图和录像等失败证据。
+
+## 已知边界
+
+- 浏览器回归目前以Chromium为主，CI使用单worker换取共享测试环境下的稳定性。
+- Playwright默认让通知与Feed走应用的同步降级路径；RabbitMQ真实链路由API任务覆盖，不能把UI结果表述为MQ故障验证。
+- Midscene结果会受模型、网络、延迟和费用影响，因此只按需运行，不作为默认CI质量门禁。
+- 后端暂未提供测试用户、评论和通知的完整删除接口；CI使用临时数据库，任务结束后销毁环境，本地长期运行需定期清理测试数据。
+- 当前重点是功能、集成和UI自动化，不替代性能、安全、兼容性和混沌测试。

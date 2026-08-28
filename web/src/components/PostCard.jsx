@@ -6,7 +6,14 @@ import { useAuth } from "../state/auth";
 import { Avatar } from "./Avatar";
 import { formatDate, splitTags } from "../utils/format";
 
-export function PostCard({ post, compact = false, rich = false, detail = false, onDeleted }) {
+export function PostCard({
+  post,
+  compact = false,
+  rich = false,
+  detail = false,
+  onDeleted,
+  onUnfavorited
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [liked, setLiked] = useState(Boolean(post.liked));
@@ -72,6 +79,9 @@ export function PostCard({ post, compact = false, rich = false, detail = false, 
     }));
     try {
       await (nextFavorited ? api.favorite(post.id) : api.unfavorite(post.id));
+      if (!nextFavorited) {
+        onUnfavorited?.(post.id);
+      }
     } catch (error) {
       setFavorited(!nextFavorited);
       setCounts((current) => ({
@@ -126,7 +136,12 @@ export function PostCard({ post, compact = false, rich = false, detail = false, 
   const showPreview = rich && !post.cover_url;
 
   return (
-    <article className={`post-card ${compact ? "compact" : ""} ${detail ? "detail" : ""}`} onClick={openPost}>
+    <article
+      className={`post-card ${compact ? "compact" : ""} ${detail ? "detail" : ""}`}
+      data-testid={`post-card-${post.id}`}
+      aria-labelledby={`post-title-${post.id}`}
+      onClick={openPost}
+    >
       <div className="post-meta">
         <Link className="post-author" to={`/user/${post.author_id}`} onClick={stopCardOpen}>
           <Avatar user={author} label={authorName} className="tiny-avatar" />
@@ -136,7 +151,7 @@ export function PostCard({ post, compact = false, rich = false, detail = false, 
       </div>
       {showPreview ? <div className="post-preview" aria-hidden="true" /> : null}
       {showCover ? <img className="post-cover" src={post.cover_url} alt="" /> : null}
-      <h3 className="post-title">{post.title}</h3>
+      <h3 id={`post-title-${post.id}`} className="post-title">{post.title}</h3>
       <p className="post-copy">{post.content}</p>
       <div className="tag-row">
         {splitTags(post.tags).map((tag) => (
@@ -146,18 +161,22 @@ export function PostCard({ post, compact = false, rich = false, detail = false, 
       <footer className="post-actions">
         <button
           className={`${liked ? "active" : ""} ${likedChanged ? "changed" : ""}`}
+          aria-label={liked ? "取消点赞" : "点赞"}
+          aria-pressed={liked}
           onAnimationEnd={() => setLikedChanged(false)}
           onClick={toggleLike}
         >
           <Heart size={16} fill={liked ? "currentColor" : "none"} />
           {counts.like_count}
         </button>
-        <Link to={`/post/${post.id}`} onClick={detail ? stopDetailCommentNavigation : stopCardOpen}>
+        <Link aria-label="查看评论" to={`/post/${post.id}`} onClick={detail ? stopDetailCommentNavigation : stopCardOpen}>
           <MessageCircle size={16} />
           {counts.comment_count}
         </Link>
         <button
           className={`favorite-action ${favorited ? "active" : ""} ${favoritedChanged ? "changed" : ""}`}
+          aria-label={favorited ? "取消收藏" : "收藏"}
+          aria-pressed={favorited}
           onAnimationEnd={() => setFavoritedChanged(false)}
           onClick={toggleFavorite}
         >

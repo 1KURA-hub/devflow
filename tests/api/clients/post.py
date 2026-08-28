@@ -32,6 +32,15 @@ class PostClient:
     def delete(self, post_id: int) -> ApiResponse:
         return self.http.delete(f"/api/posts/{post_id}")
 
-    def list_by_user(self, user_id: int, limit: Optional[int] = None) -> ApiResponse:
-        params = {"limit": limit} if limit else None
+    def list_by_user(
+        self,
+        user_id: int,
+        limit: Optional[int] = None,
+        cursor: Optional[str] = None,
+    ) -> ApiResponse:
+        params = {}
+        if limit:
+            params["limit"] = limit
+        if cursor:
+            params["cursor"] = cursor
         return self.http.get(f"/api/users/{user_id}/posts", params=params)
